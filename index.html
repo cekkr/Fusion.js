@@ -28,10 +28,38 @@
     <div id="content-wrapper">
       <div class="inner clearfix">
         <section id="main-content">
-          <h3>
-<a id="welcome-in-colibrijs-project" class="anchor" href="#welcome-in-colibrijs-project" aria-hidden="true"><span class="octicon octicon-link"></span></a>Welcome in ColibriJS project</h3>
+          <h1>
+<a id="welcome-in-colibrijs-project" class="anchor" href="#welcome-in-colibrijs-project" aria-hidden="true"><span class="octicon octicon-link"></span></a>Welcome in ColibriJS project</h1>
 
-<p>Project description... work in progress</p>
+<h2>
+<a id="first-primitive-version" class="anchor" href="#first-primitive-version" aria-hidden="true"><span class="octicon octicon-link"></span></a>First primitive version:</h2>
+
+<h3>
+<a id="colibrìjs-client" class="anchor" href="#colibr%C3%ACjs-client" aria-hidden="true"><span class="octicon octicon-link"></span></a>ColibrìJS Client</h3>
+
+<p>At this time the client can estabilish a connection with server, get a
+session id and request valued variables e objects as reference. Can get
+and set properties of .NET objects and call his method. A base
+management of exceptions is present.</p>
+
+<p>For execute test use npm "test" (for windows) or "testlinux" scripts</p>
+
+<h3>
+<a id="colibrìnet-server" class="anchor" href="#colibr%C3%ACnet-server" aria-hidden="true"><span class="octicon octicon-link"></span></a>Colibrì.NET Server</h3>
+
+<p>At this time server supports a primitive version of a session pool
+managment (with classes SessionManager and SessionToken).
+It can establish a connection with ColibriJS clients and passing object
+as value or reference (saved in ObjectsPool).
+For object handling have the following operations:
+get: for get a generic member of the object (a Property, Field, Method)
+as value, reference or function.
+set: for set a Property or Field member
+methodExec: for invoke a Method member</p>
+
+<p>At this time server can pass an object reference to client but not
+viceversa. Client can send to server only string at this time.
+Colibrì.NET GitHub page can be found here: <a href="https://github.com/cekkr/Colibri.NET">https://github.com/cekkr/Colibri.NET</a></p>
         </section>
 
         <aside id="sidebar">
