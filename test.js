@@ -16,8 +16,11 @@ console.log("test.ciao = " + test.ciao);
 console.log("test.Get() returns " + test.Get());
 
 test.Say("ciao uomo"); // Watch your server console
-console.log(test.laugh("lol!"));
+console.log('test.laugh("lol!") returns ' + test.laugh("lol!"));
 
+console.log('test.Sum(10,15) returns ' + test.Sum(10, 15));
+
+//test.Sum("ciao"); //Exception!
 
 clinker.end();
 
