@@ -22,5 +22,12 @@ console.log('test.Sum(10,15) returns ' + test.Sum(10, 15));
 
 //test.Sum("ciao"); //Exception!
 
+var TestClass = clinker.get('TestClass');
+var newtest = new TestClass();
+console.log("newtest.ciao = " + newtest.ciao);
+newtest.ciao = "how are you?";
+console.log("newtest.ciao = " + newtest.ciao);
+
+
 clinker.end();
 

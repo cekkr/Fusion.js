@@ -26,6 +26,11 @@ ColibriJS.prototype.Connect = function Connect(session, server) {
 		
 		if(splserver.length>1)
 			port = Number(splserver[1]);
+		else 
+			if(isNan(address)){
+				port = address;
+				address = '127.0.0.1';
+			}
 	}
 	
 	var serverLinker = new ServerLinker(address, port);
@@ -65,8 +70,14 @@ function ServerLinker(HOST, PORT){
 	// Add a 'close' event handler for the client socket
 	this.client.on('close', function() {
 		debuglog('Connection closed');
-		this.serverLinker.connected = false;
-		this.serverLinker.end();
+		
+		var connected = this.serverLinker.connected || this.connected;
+		
+		if(connected){
+			this.serverLinker.end();
+			debuglog("I'm going to exit");
+			process.exit();
+		}
 	});
 	
 	this.client.on('end', function () {
@@ -135,13 +146,30 @@ function ServerLinker(HOST, PORT){
 		return this.varBoxToJObject(response);
 	}
 	
+	this.getType = function(type){ //Deprecated
+
+		var that = this;
+		return function(){
+			var args = this.argumentsToJsonArray(arguments);
+			var response = that.execRequest({ request: 'instance', type: type, arguments: args });
+			return that.varBoxToJObject(response);	
+		}
+	}
+	
+	this.argumentsToJsonArray = function(myargs){
+		var args = new Array();
+		for(a=0; a<myargs.length; a++)
+			args.push(this.parseJObject(myargs[a]));
+		return args;
+	}
+	
 	this.varBoxToJObject = function(varbox){
 		if(varbox.response == 'varbox'){
 			switch(varbox.type){		
 				case 'valued':
 					return JSON.parse(varbox.object);		
 				case 'ref':
-					return new ObjectWrapper(this, varbox.object);
+					return new ObjectWrapper(this, varbox.object, varbox);
 				case 'exception':
 					throw new Error(varbox.exception);
 			}
@@ -204,8 +232,8 @@ function ServerLinker(HOST, PORT){
 		}
 		
 		this.client.destroy();
-		
 		this.connected = false;
+		debuglog("Client destroyed");
 		
 		/*if(!ttl) ttl = 5;
 		else ttl -= 1;
@@ -252,20 +280,21 @@ function ServerLinker(HOST, PORT){
 	}
 }
 
-function ObjectWrapper (serverLinker, ref) {	
+
+function ObjectWrapper (serverLinker, ref, options) {	
 	if (isNaN(ref)) {
 		throw new TypeError('Invalid object reference');
 	}
+	
+	if(options == undefined)
+		options = {type: ''};
 	
 	var varBoxToJObject = function varBoxToJObject(varbox){
 		if(varbox.propertyType){
 			switch(varbox.propertyType){
 				case 'Method':
 					return function(){
-						var args = new Array();
-						for(a=0; a<arguments.length; a++)
-							args.push(serverLinker.parseJObject(arguments[a]));
-						
+						var args = serverLinker.argumentsToJsonArray(arguments);
 						var response = serverLinker.objectHandling(ref, {command: 'methodExec', property: varbox.method, arguments: args});
 						return varBoxToJObject(response);
 					}
@@ -276,8 +305,12 @@ function ObjectWrapper (serverLinker, ref) {
 		return serverLinker.varBoxToJObject(varbox);
 	}
 	
-	return new Proxy(this, {
-		get: function (target, name) {
+	var proxyTarget = function() {
+		//console.log("function called!");
+	};
+	
+	return new Proxy(proxyTarget, {
+		get: function (target, name) {			
 			var response = serverLinker.objectHandling(ref, {command: 'get', property: name});
 			return varBoxToJObject(response);
 		},
@@ -286,11 +319,6 @@ function ObjectWrapper (serverLinker, ref) {
 			var strval = serverLinker.parseJObject(val);
 			var response = serverLinker.objectHandling(ref, {command: 'set', property:name, object: strval})
 			return varBoxToJObject(response);
-			
-			debuglog(name + ' = ' + val);
-			//var i = +name;
-			//return target[i < 0 ? target.length + i : i] = val;
-			return 1;
 		},
 		
 		apply: function(target, wetThisArg, wetArgs) {
@@ -298,9 +326,14 @@ function ObjectWrapper (serverLinker, ref) {
             return 2;
         },
 		
-		getOwnPropertyDescriptor: function(target, prop) { //Per ora non so che farmene
-			debuglog("called: " + prop); 
-			return { configurable: true, enumerable: true, value: 10 };
+		construct: function(target, args) {			
+			if(options.isType === "1"){
+				args = serverLinker.argumentsToJsonArray(args);
+				var response = serverLinker.execRequest({ request: 'instance', typeref: ref, arguments: args });
+				return varBoxToJObject(response);
+			}
+			
+			throw new Error("You cannot instance an object");
 		}
 
 	});
