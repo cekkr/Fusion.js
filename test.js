@@ -28,6 +28,7 @@ console.log("newtest.ciao = " + newtest.ciao);
 newtest.ciao = "how are you?";
 console.log("newtest.ciao = " + newtest.ciao);
 
+var lasttest = new TestClass("holaaaa");
 
 clinker.end();
 

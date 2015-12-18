@@ -4,8 +4,9 @@
   "description": "Manipulates .NET objects in javascript",
   "main": "index.js",
   "scripts": {
-    "test": "set NODE_DEBUG=colibrijs&&node --harmony_proxies test.js", 
-	"testlinux": "exec NODE_DEBUG=colibrijs node --harmony_proxies test.js" 
+    "test": "node --harmony_proxies test.js",
+	"testdebug": "set NODE_DEBUG=colibrijs&&node --harmony_proxies test.js",
+	"testdebug-linux": "exec NODE_DEBUG=colibrijs node --harmony_proxies test.js" 
   },
   "repository": {
     "type": "git",

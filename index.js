@@ -10,18 +10,16 @@ var debuglog = require('debuglog')('colibrijs');
 function ColibriJS() {
 }
 
-ColibriJS.prototype.Connect = function Connect(session, server) {
+ColibriJS.prototype.Connect = function Connect(args) {
 	
-	if(!server && session && session.indexOf(".") > -1 && session.indexOf(":") > -1){
-		server = session;
-		session = undefined;
-	}
+	if(!args)
+		args = {server: '127.0.0.1:3030'};
 	
 	var address = '127.0.0.1';
 	var port = 3030;
 	
-	if(server){
-		var splserver = server.split(':');
+	if(args.server){
+		var splserver = args.server.split(':');
 		address = splserver[0];
 		
 		if(splserver.length>1)
@@ -35,8 +33,8 @@ ColibriJS.prototype.Connect = function Connect(session, server) {
 	
 	var serverLinker = new ServerLinker(address, port);
 	
-	if(session)
-		return serverLinker.getSession(session);
+	if(args.session)
+		return serverLinker.getSession(args.session);
 	
 	return serverLinker;
 };
@@ -76,7 +74,9 @@ function ServerLinker(HOST, PORT){
 		if(connected){
 			this.serverLinker.end();
 			debuglog("I'm going to exit");
-			process.exit();
+			
+			if(process.env.NODE_DEBUG === "colibrijs")
+				process.exit();
 		}
 	});
 	
