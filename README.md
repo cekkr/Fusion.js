@@ -116,7 +116,7 @@ console.log(newHappyObject.areYouOk("c'mon"));
 Now execute your server and run node script:
 
 ```
-$ node app.js
+$ node app.js --harmony_proxies
 ```
 
 Watch results.
