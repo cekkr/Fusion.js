@@ -20,7 +20,7 @@
     <header>
       <div class="inner">
         <h1>ColibriJS</h1>
-        <h2>Manipulates .NET objects in Javascript</h2>
+        <h2>Handle .NET objects in JavaScript </h2>
         <a href="https://github.com/cekkr/ColibriJS" class="button"><small>View project on</small> GitHub</a>
       </div>
     </header>
@@ -29,37 +29,160 @@
       <div class="inner clearfix">
         <section id="main-content">
           <h1>
-<a id="welcome-in-colibrijs-project" class="anchor" href="#welcome-in-colibrijs-project" aria-hidden="true"><span class="octicon octicon-link"></span></a>Welcome in ColibriJS project</h1>
+<a id="colibrìjs" class="anchor" href="#colibr%C3%ACjs" aria-hidden="true"><span class="octicon octicon-link"></span></a>ColibrìJS</h1>
+
+<p>ColibriJS is a javascript library based on <a href="https://github.com/tvcutsem/harmony-reflect">harmony-reflect</a> that allows you to manipulate .NET objects in your JS application or service.</p>
 
 <h2>
-<a id="first-primitive-version" class="anchor" href="#first-primitive-version" aria-hidden="true"><span class="octicon octicon-link"></span></a>First primitive version:</h2>
+<a id="installation" class="anchor" href="#installation" aria-hidden="true"><span class="octicon octicon-link"></span></a>Installation</h2>
+
+<p>Colibri project is divided in two parts: ColibriJS for client side and <a href="https://github.com/cekkr/Colibri.NET">Colibri.NET</a> as server and objects manager.</p>
 
 <h3>
-<a id="colibrìjs-client" class="anchor" href="#colibr%C3%ACjs-client" aria-hidden="true"><span class="octicon octicon-link"></span></a>ColibrìJS Client</h3>
+<a id="client-side" class="anchor" href="#client-side" aria-hidden="true"><span class="octicon octicon-link"></span></a>Client side</h3>
 
-<p>At this time the client can estabilish a connection with server, get a
-session id and request valued variables e objects as reference. Can get
-and set properties of .NET objects and call his method. A base
-management of exceptions is present.</p>
+<p>Requires <a href="https://nodejs.org/">Node.js</a> &gt;= v0.7.8 (<a href="https://www.npmjs.com/package/harmony-reflect#compatibility">read harmony-reflect compatibility</a>)    </p>
 
-<p>For execute test use npm "test" (for windows) or "testlinux" scripts</p>
+<pre><code>$ npm install git+https://github.com/cekkr/ColibriJS.git
+</code></pre>
 
 <h3>
-<a id="colibrìnet-server" class="anchor" href="#colibr%C3%ACnet-server" aria-hidden="true"><span class="octicon octicon-link"></span></a>Colibrì.NET Server</h3>
+<a id="server-side" class="anchor" href="#server-side" aria-hidden="true"><span class="octicon octicon-link"></span></a>Server Side</h3>
 
-<p>At this time server supports a primitive version of a session pool
-managment (with classes SessionManager and SessionToken).
-It can establish a connection with ColibriJS clients and passing object
-as value or reference (saved in ObjectsPool).
-For object handling have the following operations:
-get: for get a generic member of the object (a Property, Field, Method)
-as value, reference or function.
-set: for set a Property or Field member
-methodExec: for invoke a Method member</p>
+<p>Requires Visual Studio 2015 (Community it's okay) and Framework .NET 4.5</p>
 
-<p>At the moment server can pass an object reference to client but not
-viceversa. Client can send to server only string vars.
-Colibrì.NET GitHub page can be found here: <a href="https://github.com/cekkr/Colibri.NET">https://github.com/cekkr/Colibri.NET</a></p>
+<p>Download the latest version of Colibri.NET solution <a href="https://github.com/cekkr/Colibri.NET/archive/master.zip">as zip</a> or by cloning its repository <code>https://github.com/cekkr/Colibri.NET.git</code></p>
+
+<p>Open the solution and set ServerTest <a href="https://msdn.microsoft.com/en-us/library/a1awth7y.aspx">as Startup project</a>.</p>
+
+<h3>
+<a id="first-run" class="anchor" href="#first-run" aria-hidden="true"><span class="octicon octicon-link"></span></a>First run</h3>
+
+<p>Run ServerTest, then go to ColibriJS module directory and execute <code>$ npm test</code>. This runs <a href="https://github.com/cekkr/ColibriJS/blob/master/test.js">test.js</a> script.</p>
+
+<pre><code>$ npm test
+
+&gt; colibrijs@0.0.1 test C:\Users\cekkr\colibri\ColibriJS
+&gt; node --harmony_proxies test.js
+
+strtest = This is a string test
+test.ciao = come va
+test.ciao = how are you?
+test.Get() returns The string is on the table
+test.laugh("lol!") returns lol! ahahahahahah
+test.Sum(10,15) returns 25
+newtest.ciao = come va
+newtest.ciao = how are you?
+</code></pre>
+
+<p>For show debug logs, type <code>$ npm testdebug</code>, <a href="https://www.npmjs.com/package/debuglog">debuglog</a> section name is <code>colibrijs</code></p>
+
+<h2>
+<a id="your-first-project" class="anchor" href="#your-first-project" aria-hidden="true"><span class="octicon octicon-link"></span></a>Your first project</h2>
+
+<h3>
+<a id="server-side-1" class="anchor" href="#server-side-1" aria-hidden="true"><span class="octicon octicon-link"></span></a>Server side</h3>
+
+<p>Open Visual Studio, create a new Console Application, import Colibri.NET (as project or dll) in the solution and add its reference in main project.<br><br>
+The first class to know is <code>Server</code>: it allows you to create your first server very quickly. <br>
+Server contains two very important properties: <code>DisputedEntieties</code> and <code>SessionPool</code>. These viariables are homonymous of their classes (inheritable in the comfort of the developer) and allow you to decide which objects you want provide to client and manage connection sessions. To be precise, SessionPool contains in turn another variable DisputedEntities that will be set when Server.StartListening() is performed, if Server.DisputedEntities is not null.</p>
+
+<p>Now edit your <code>Program.cs</code> file. </p>
+
+<div class="highlight highlight-source-cs"><pre><span class="pl-k">class</span> <span class="pl-en">Program</span>
+{
+    <span class="pl-k">static</span> <span class="pl-k">void</span> <span class="pl-en">Main</span>(<span class="pl-k">string[]</span> <span class="pl-smi">args</span>)
+    {
+        <span class="pl-k">var</span> server = <span class="pl-k">new</span> Colibri.NET.Server();
+
+        server.DisputedEntities.Insert(<span class="pl-s"><span class="pl-pds">"</span>testString<span class="pl-pds">"</span></span>, <span class="pl-s"><span class="pl-pds">"</span>This is a string test<span class="pl-pds">"</span></span>);
+        server.DisputedEntities.Insert(<span class="pl-s"><span class="pl-pds">"</span>happyObject<span class="pl-pds">"</span></span>, <span class="pl-k">new</span> HappyClass());
+        server.DisputedEntities.Insert(<span class="pl-s"><span class="pl-pds">"</span>HappyClass<span class="pl-pds">"</span></span>, <span class="pl-k">typeof</span>(HappyClass));
+
+        server.StartListening(); <span class="pl-c">//Default port: 3030</span>
+    }
+}
+
+<span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-en">HappyClass</span>
+{
+    <span class="pl-k">public</span> <span class="pl-k">bool</span> isHappy = <span class="pl-c1">false</span>;
+    <span class="pl-k">private</span> <span class="pl-k">int</span> _number = <span class="pl-c1">1</span>;
+
+    <span class="pl-k">public</span> <span class="pl-en">HappyClass</span>() { }
+    <span class="pl-k">public</span> <span class="pl-en">HappyClass</span>(<span class="pl-k">int</span> <span class="pl-smi">number</span>) 
+    {
+        _number = number;
+    }
+
+    <span class="pl-k">public</span> <span class="pl-k">string</span> <span class="pl-en">areYouOk</span>(<span class="pl-k">string</span> <span class="pl-smi">say</span>)
+    {
+        <span class="pl-k">for</span>(<span class="pl-k">int</span> n=<span class="pl-c1">0</span>; n&lt;_number; n++)
+            Console.Write(say);
+
+        <span class="pl-k">if</span>(isHappy)
+            <span class="pl-k">return</span> <span class="pl-s"><span class="pl-pds">"</span>YEAH! I'm happy<span class="pl-pds">"</span></span>;
+        <span class="pl-k">else</span>
+            <span class="pl-k">return</span> <span class="pl-s"><span class="pl-pds">"</span>no i'm sad :'(<span class="pl-pds">"</span></span>;
+    }
+}</pre></div>
+
+<h3>
+<a id="client-side-1" class="anchor" href="#client-side-1" aria-hidden="true"><span class="octicon octicon-link"></span></a>Client side</h3>
+
+<p>In your client project directory install ColibriJS: <br></p>
+
+<pre><code>$ npm install git+https://github.com/cekkr/ColibriJS.git --save 
+</code></pre>
+
+<p>In your app.js file write:</p>
+
+<div class="highlight highlight-source-js"><pre><span class="pl-k">var</span> ColibriJS <span class="pl-k">=</span> <span class="pl-c1">require</span>(<span class="pl-s"><span class="pl-pds">'</span>colibrijs<span class="pl-pds">'</span></span>);
+<span class="pl-k">var</span> linker <span class="pl-k">=</span> <span class="pl-smi">ColibriJS</span>.<span class="pl-en">Connect</span>(); <span class="pl-c">//Default server: 127.0.0.1:3030</span>
+
+<span class="pl-en">console</span>.<span class="pl-c1">log</span>(<span class="pl-s"><span class="pl-pds">"</span>testString say: <span class="pl-pds">"</span></span> <span class="pl-k">+</span> <span class="pl-smi">linker</span>.<span class="pl-en">get</span>(<span class="pl-s"><span class="pl-pds">"</span>testString<span class="pl-pds">"</span></span>));
+
+<span class="pl-k">var</span> happyObject <span class="pl-k">=</span> <span class="pl-smi">linker</span>.<span class="pl-en">get</span>(<span class="pl-s"><span class="pl-pds">"</span>happyObject<span class="pl-pds">"</span></span>);
+<span class="pl-en">console</span>.<span class="pl-c1">log</span>(<span class="pl-smi">happyObject</span>.<span class="pl-en">areYouOk</span>(<span class="pl-s"><span class="pl-pds">"</span>first<span class="pl-pds">"</span></span>));
+<span class="pl-smi">happyObject</span>.<span class="pl-smi">isHappy</span> <span class="pl-k">=</span> <span class="pl-c1">true</span>; <span class="pl-c">//For entire execution of your Colibri server isHappy will remain true</span>
+<span class="pl-en">console</span>.<span class="pl-c1">log</span>(<span class="pl-smi">happyObject</span>.<span class="pl-en">areYouOk</span>(<span class="pl-s"><span class="pl-pds">"</span>second<span class="pl-pds">"</span></span>));
+
+<span class="pl-k">var</span> HappyClass <span class="pl-k">=</span> <span class="pl-smi">linker</span>.<span class="pl-en">get</span>(<span class="pl-s"><span class="pl-pds">"</span>HappyClass<span class="pl-pds">"</span></span>);
+<span class="pl-k">var</span> newHappyObject <span class="pl-k">=</span> <span class="pl-k">new</span> <span class="pl-en">HappyClass</span>(<span class="pl-c1">3</span>);
+<span class="pl-en">console</span>.<span class="pl-c1">log</span>(<span class="pl-smi">newHappyObject</span>.<span class="pl-en">areYouOk</span>(<span class="pl-s"><span class="pl-pds">"</span>c'mon<span class="pl-pds">"</span></span>));
+</pre></div>
+
+<p>Now execute your server and run node script:</p>
+
+<pre><code>$ node app.js --harmony_proxies
+</code></pre>
+
+<p>Watch results.</p>
+
+<h2>
+<a id="development" class="anchor" href="#development" aria-hidden="true"><span class="octicon octicon-link"></span></a>Development</h2>
+
+<p>Project is in alpha version and development is still long. I apologize for the poverty of documentation.</p>
+
+<h3>
+<a id="colibrijs" class="anchor" href="#colibrijs" aria-hidden="true"><span class="octicon octicon-link"></span></a>ColibriJS</h3>
+
+<ul>
+<li>
+<code>ColibriJS.Connect(address= '127.0.0.1')</code> allow to create a ServerLinker instance.</li>
+<li>
+<code>ServerLinker.getSession(parameters = {})</code> allow to have a session reference id and access to objects.</li>
+<li>Added support to passing .NET objects as reference</li>
+<li>
+<code>ServerLinker.get(objectName)</code> returns a .NET object (as value or reference).</li>
+<li>Created class ObjectWrapper as object proxy manager.</li>
+<li>Added properties and methods support to ObjectWrapper.</li>
+<li>Added support to .NET types and objects instance.</li>
+</ul>
+
+<h3>
+<a id="colibrinet" class="anchor" href="#colibrinet" aria-hidden="true"><span class="octicon octicon-link"></span></a>Colibri.NET</h3>
+
+<p>Colibrì.NET GitHub page can be found here: <a href="https://github.com/cekkr/Colibri.NET">https://github.com/cekkr/Colibri.NET</a>. </p>
         </section>
 
         <aside id="sidebar">
@@ -79,6 +202,16 @@ Colibrì.NET GitHub page can be found here: <a href="https://github.com/cekkr/Co
       </div>
     </div>
 
-  
+            <script type="text/javascript">
+            var gaJsHost = (("https:" == document.location.protocol) ? "https://ssl." : "http://www.");
+            document.write(unescape("%3Cscript src='" + gaJsHost + "google-analytics.com/ga.js' type='text/javascript'%3E%3C/script%3E"));
+          </script>
+          <script type="text/javascript">
+            try {
+              var pageTracker = _gat._getTracker("UA-71635748-1");
+            pageTracker._trackPageview();
+            } catch(err) {}
+          </script>
+
   </body>
 </html>
