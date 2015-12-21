@@ -39,7 +39,14 @@ ColibriJS.prototype.Connect = function Connect(args) {
 	return serverLinker;
 };
 
+var isFunction = function isFunction(functionToCheck) {
+	var getType = {};
+	return functionToCheck && getType.toString.call(functionToCheck) === '[object Function]';
+}
+
 function ServerLinker(HOST, PORT){
+	var that = this;
+	
 	///
 	/// Client region
 	///
@@ -92,9 +99,9 @@ function ServerLinker(HOST, PORT){
 	
 	
 	///
-	///	Make requests (synchronous, wait for response)
+	///	Make requests (synchronous, wait for response if callback is undefined)
 	///
-	this.execRequest = function(args){
+	this.execRequest = function(args, callback){
 		
 		if(this.sessionId == -1 && args.request != "getSession")
 			this.getSession();
@@ -112,10 +119,15 @@ function ServerLinker(HOST, PORT){
 		this.client.once('data', function(data) {
 			debuglog('Ricevo: ' + data);
 			datares = data;
+			
+			if(isFunction(callback))
+				callback(JSON.parse(datares));
+			
 			done = true;
 		});
 		
-		deasync.loopWhile(function(){return !done;});
+		if(callback === undefined)
+			deasync.loopWhile(function(){return !done;});
 		
 		datares = JSON.parse(datares);
 		
@@ -142,13 +154,11 @@ function ServerLinker(HOST, PORT){
 	}
 	
 	this.get = function(variable){
-		var response = this.execRequest({ request: 'get', variable: variable});
-		return this.varBoxToJObject(response);
+		var response = that.execRequest({ request: 'get', variable: variable});
+		return that.varBoxToJObject(response);
 	}
 	
 	this.getType = function(type){ //Deprecated
-
-		var that = this;
 		return function(){
 			var args = this.argumentsToJsonArray(arguments);
 			var response = that.execRequest({ request: 'instance', type: type, arguments: args });
@@ -158,8 +168,16 @@ function ServerLinker(HOST, PORT){
 	
 	this.argumentsToJsonArray = function(myargs){
 		var args = new Array();
-		for(a=0; a<myargs.length; a++)
-			args.push(this.parseJObject(myargs[a]));
+		
+		for(a=0; a<myargs.length; a++){
+			var arg = myargs[a];
+			var	oref;
+			if((oref=arg.cjsGetObjectRef) !== undefined)
+				args.push({cjsObjectRef: oref});
+			else
+				args.push(this.parseJObject(arg));
+		}
+		
 		return args;
 	}
 	
@@ -305,35 +323,57 @@ function ObjectWrapper (serverLinker, ref, options) {
 		return serverLinker.varBoxToJObject(varbox);
 	}
 	
+	var instanceType = function instanceType(args){
+		if(options.isType === "1"){
+			args = serverLinker.argumentsToJsonArray(args);
+			var response = serverLinker.execRequest({ request: 'instance', typeref: ref, arguments: args });
+			return varBoxToJObject(response);
+		}
+		else
+			throw new Error("You cannot instance this object, is not a type.");
+	}
+	
 	var proxyTarget = function() {
 		//console.log("function called!");
 	};
 	
 	return new Proxy(proxyTarget, {
-		get: function (target, name) {			
+		get: function (target, name) {	
+			
+			if(name == 'cjsGetObjectRef')
+				return ref;
+		
 			var response = serverLinker.objectHandling(ref, {command: 'get', property: name});
 			return varBoxToJObject(response);
 		},
 		
 		set: function (target, name, val) {
-			var strval = serverLinker.parseJObject(val);
-			var response = serverLinker.objectHandling(ref, {command: 'set', property:name, object: strval})
+			var cmd = {command: 'set', property:name};
+			
+			var objref = -1;
+			if((objref = val.cjsGetObjectRef) === undefined)
+				cmd.val = serverLinker.parseJObject(val);
+			else 
+				cmd.objref = objref;
+			
+			var response = serverLinker.objectHandling(ref, cmd)
 			return varBoxToJObject(response);
 		},
 		
-		apply: function(target, wetThisArg, wetArgs) {
-            debuglog(target + " ha provato ad eseguire " + wetThisArg);
-            return 2;
+		apply: function(target, wetThisArg, args) {
+			if(options.isType === "1")
+				return instanceType(args);
+			else{
+				debuglog(target + " ha provato ad eseguire ");
+				debuglog(wetThisArg);
+				debuglog(wetArgs);
+				
+				return 2;
+			}
         },
 		
 		construct: function(target, args) {			
-			if(options.isType === "1"){
-				args = serverLinker.argumentsToJsonArray(args);
-				var response = serverLinker.execRequest({ request: 'instance', typeref: ref, arguments: args });
-				return varBoxToJObject(response);
-			}
-			
-			throw new Error("You cannot instance an object");
+			return instanceType(args);
 		}
 
 	});
