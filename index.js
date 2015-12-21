@@ -22,8 +22,6 @@ var deasync = require('deasync');
 
 var debuglog = require('debuglog')('colibrijs');
 
-//var Worker = require('webworker-threads').Worker; //Temporaneamente deprecato
-//var queue = require('queue'); // se non verrà più utilizzato s'ha da eliminare dal composer.json
 function ColibriJS() {
 }
 
