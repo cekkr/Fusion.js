@@ -18,6 +18,7 @@ License along with this library; if not, see <http://www.gnu.org/licenses/>.
 
 */
 
+var reflect = require('harmony-reflect');
 var net = require('net');
 var deasync = require('deasync');
 

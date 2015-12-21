@@ -1,7 +1,7 @@
 {
   "name": "colibrijs",
-  "version": "0.0.1",
-  "description": "Manipulates .NET objects in javascript",
+  "version": "0.0.2",
+  "description": "Handle .NET objects in JavaScript",
   "main": "index.js",
   "scripts": {
     "test": "node --harmony_proxies test.js",
@@ -19,7 +19,7 @@
     "class"
   ],
   "author": "= <=> (=)",
-  "license": "Apache-2.0",
+  "license": "LGPLv3",
   "bugs": {
     "url": "https://github.com/cekkr/colibrijs/issues"
   },
@@ -27,7 +27,7 @@
   "dependencies": {
     "deasync": "^0.1.4",
     "debuglog": "^1.0.1",
-    "harmony-proxy": "^0.1.0",
+    "fibers": "^1.0.8",
     "harmony-reflect": "^1.4.2"
   }
 }
