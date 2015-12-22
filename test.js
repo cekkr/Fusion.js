@@ -40,5 +40,10 @@ newsecond.name = "giacomo";
 newtest.SetSecondClass(newsecond);
 console.log("Now SecondClass name is "+newtest.ReadSecondClassName());
 
+var ArrayClass = clinker.get('ArrayClass');
+var arrayObj = new ArrayClass();
+console.log("arrayObj['hipe'] = " + arrayObj['hipe']);
+console.log("arrayObj[2] = " + arrayObj[2]);
+
 clinker.end();
 
