@@ -16,7 +16,7 @@ console.log("test.ciao = " + test.ciao);
 
 console.log("test.Get() returns " + test.Get());
 
-test.Say("ciao uomo"); // Watch your server console
+test.Say("Sir, I'm not sure why the President was dressed in women's clothing."); // Watch your server console
 
 console.log('test.laugh("lol!") returns ' + test.laugh("lol!"));
 
@@ -36,14 +36,17 @@ console.log("newtest.ciao = " + newtest.ciao);
 console.log("SecondClass name is "+newtest.ReadSecondClassName());
 var newsecond = new clinker.get('SecondClass')();
 newsecond.name = "giacomo";
-//newtest.second = newsecond;
-newtest.SetSecondClass(newsecond);
+newtest.SetSecondClass(newsecond); //newtest.second = newsecond;
 console.log("Now SecondClass name is "+newtest.ReadSecondClassName());
 
 var ArrayClass = clinker.get('ArrayClass');
 var arrayObj = new ArrayClass();
 console.log("arrayObj['hipe'] = " + arrayObj['hipe']);
 console.log("arrayObj[2] = " + arrayObj[2]);
+console.log("arrayObj.Words = " + arrayObj.Words.valueOf());
+
+var wordsAsReference = arrayObj['&Words'];
+console.log("wordsAsReference[0] = " + wordsAsReference[0]);
 
 clinker.end();
 

@@ -132,6 +132,7 @@ Project is in alpha version and development is still long. I apologize for the p
 - Created class ObjectWrapper as object proxy manager.
 - Added properties and methods support to ObjectWrapper.
 - Added support to .NET types and objects instance.
+- Added support to arrays and indexers
 
 ###Colibri.NET
 Colibrì.NET GitHub page can be found here: [https://github.com/cekkr/Colibri.NET](https://github.com/cekkr/Colibri.NET). 

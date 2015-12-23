@@ -127,14 +127,14 @@ function ServerLinker(HOST, PORT){
 	
 		//Executing
 		var send = JSON.stringify(args);
-		debuglog('Invio: ' + send);
+		debuglog('Sending: ' + send);
 		this.client.write(send);
 		
 		//Controlla evento risponditore 
 		var done = false;
 		var datares;
 		this.client.once('data', function(data) {
-			debuglog('Ricevo: ' + data);
+			debuglog('Receive: ' + data);
 			datares = data;
 			
 			if(isFunction(callback))
