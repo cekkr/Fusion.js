@@ -206,6 +206,9 @@ function ServerLinker(HOST, PORT){
 				case 'ref':
 					return new ObjectWrapper(this, varbox.object, varbox);
 				case 'exception':
+					if(varbox.excode === 'UNDEFINED_MEMBER')
+						return undefined;
+
 					throw new Error(varbox.exception);
 			}
 		}
@@ -325,6 +328,10 @@ function ObjectWrapper (serverLinker, ref, options) {
 			}
 		}
 		
+		if(varbox.type == 'exception'){
+
+		}
+
 		return serverLinker.varBoxToJObject(varbox);
 	}
 	
@@ -370,7 +377,7 @@ function ObjectWrapper (serverLinker, ref, options) {
 			else 
 				cmd.objref = objref;
 			
-			var response = serverLinker.objectHandling(ref, cmd)
+			var response = serverLinker.objectHandling(ref, cmd);
 			return varBoxToJObject(response);
 		},
 		
