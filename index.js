@@ -99,8 +99,8 @@ function ServerLinker(HOST, PORT){
 			this.serverLinker.end();
 			debuglog("I'm going to exit");
 			
-			if(process.env.NODE_DEBUG === "colibrijs")
-				process.exit();
+			//if(process.env.NODE_DEBUG === "colibrijs")
+			//	process.exit();
 		}
 	});
 	
