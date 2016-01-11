@@ -165,7 +165,7 @@ function ServerLinker(HOST, PORT){
 		if(response.response == "reference")
 			this.sessionId = response.reference;
 		
-		debuglog("Il mio session id è " + this.sessionId);
+		debuglog("My session id is " + this.sessionId);
 		
 		return this.sessionId;
 	}
@@ -345,8 +345,17 @@ function ObjectWrapper (serverLinker, ref, options) {
 	return new Proxy(proxyTarget, {
 		get: function (target, name) {	
 			
-			if(name == 'cjsGetObjectRef')
-				return ref;
+			switch(name){
+				case 'cjsGetObjectRef':
+					return ref;
+
+				case 'valueOf':
+					return function(){
+						var response = serverLinker.objectHandling(ref, {command: 'get', property: 'inspect'});
+						var valof = varBoxToJObject(response);
+						return JSON.parse(valof);
+					}
+			}
 		
 			var response = serverLinker.objectHandling(ref, {command: 'get', property: name});
 			return varBoxToJObject(response);
