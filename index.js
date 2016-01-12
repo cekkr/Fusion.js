@@ -362,15 +362,14 @@ function ObjectWrapper (serverLinker, ref, options) {
 					return ref;
 
 				case 'inspect':
-					var response = serverLinker.objectHandling(ref, {command: 'get', property: 'inspect'});
+					var response = serverLinker.objectHandling(ref, {command: 'inspect'});
 					var valof = varBoxToJObject(response);
 					return JSON3.parse(valof);
 
 				case 'valueOf':
 					return function valueOf(){
-						var response = serverLinker.objectHandling(ref, {command: 'get', property: 'inspect'});
-						var valof = varBoxToJObject(response);
-						return JSON3.parse(valof);
+						var response = serverLinker.objectHandling(ref, {command: 'inspect'});
+						return varBoxToJObject(response);
 					}
 			}
 		
