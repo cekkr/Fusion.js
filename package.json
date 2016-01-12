@@ -28,6 +28,7 @@
     "deasync": "^0.1.4",
     "debuglog": "^1.0.1",
     "fibers": "^1.0.8",
-    "harmony-reflect": "^1.4.2"
+    "harmony-reflect": "^1.4.2",
+    "json3": "^3.3.2"
   }
 }

@@ -21,6 +21,7 @@ License along with this library; if not, see <http://www.gnu.org/licenses/>.
 var reflect = require('harmony-reflect');
 var net = require('net');
 var deasync = require('deasync');
+var JSON3 = require("json3");
 
 var debuglog = require('debuglog')('colibrijs');
 
@@ -360,7 +361,7 @@ function ObjectWrapper (serverLinker, ref, options) {
 					return function(){
 						var response = serverLinker.objectHandling(ref, {command: 'get', property: 'inspect'});
 						var valof = varBoxToJObject(response);
-						return JSON.parse(valof);
+						return JSON3.parse(valof);
 					}
 			}
 		
