@@ -216,6 +216,10 @@ function ServerLinker(HOST, PORT){
 		
 		return undefined;
 	}
+
+	this.recursiveJsonParser = function(json){
+
+	};
 	
 	//In futuro si potrebbe approfondire il passaggio di variabili da js
 	this.parseJObject = function(obj){
@@ -357,8 +361,13 @@ function ObjectWrapper (serverLinker, ref, options) {
 				case 'cjsGetObjectRef':
 					return ref;
 
+				case 'inspect':
+					var response = serverLinker.objectHandling(ref, {command: 'get', property: 'inspect'});
+					var valof = varBoxToJObject(response);
+					return JSON3.parse(valof);
+
 				case 'valueOf':
-					return function(){
+					return function valueOf(){
 						var response = serverLinker.objectHandling(ref, {command: 'get', property: 'inspect'});
 						var valof = varBoxToJObject(response);
 						return JSON3.parse(valof);
