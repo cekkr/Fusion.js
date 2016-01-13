@@ -125,7 +125,6 @@ function ServerLinker(HOST, PORT){
 		if(this.sessionId == -1 && args.request != "getSession")
 			this.getSession();
 		
-		//args["sessionId"] = this.sessionId;
 		var jsonStream = new JsonStream();
 
 		//Executing
@@ -133,7 +132,8 @@ function ServerLinker(HOST, PORT){
 		debuglog('Sending: ' + send);
 		this.client.write(send);
 		
-		//Controlla evento risponditore 
+		//Check data events
+		var that = this;
 		var done = false;
 		var datares;
 
@@ -148,7 +148,7 @@ function ServerLinker(HOST, PORT){
 				done = true;
 			}
 			else 
-				this.client.once('data', receiveData);
+				that.client.once('data', receiveData);
 		}
 
 		this.client.once('data', receiveData);
@@ -425,21 +425,19 @@ function JsonStream(){
 	this._totalLen = 0;
 
 	this.appendJson = function(json){
+
+		if(typeof json !== 'string')
+			json = json.toString();
+
 		this.json += json;
 
-		console.log('\r\nAppending json len: '+ json.length +' \r\n');
-
-
 		for(var j=0; j<json.length; j++){
-
 			var c = json.charAt(j);
 
-			console.log('c is ' + c);
 			if(c=="'" && !this._afterEscape)
 				this._openedApix = !this._openedApix;
 
 			if(!this._openedApix){
-				var was = true;
 				switch(c){
 					case '{':
 						this._numBraces++;
@@ -453,24 +451,14 @@ function JsonStream(){
 					case ']':
 						this._numBrackets--;
 						break;
-					default:
-						was = false;
-						break;
 				}
-
-				if(was) console.log(c);
-				//if(was) console.log(c + '\t{'+this._numBraces+'}\t['+this._numBreackets+']\t"'+this._openedApix+'"');
 			}
 
 			this._afterEscape = (c == '\\' && this._openedApix && !this._afterEscape);
 			this._totalLen++;
-
-			
 		}
 
 		console.log('Len:'+this._totalLen+'\t{'+this._numBraces+'}\t['+this._numBrackets+']\t"'+this._openedApix+'"');
-
-		//console.log(this); //Studio più approfondito sul cambio di c
 	};
 
 	this.isValid = function(){
