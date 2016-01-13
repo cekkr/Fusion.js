@@ -132,7 +132,7 @@ function ServerLinker(HOST, PORT){
 		debuglog('Sending: ' + send);
 		this.client.write(send);
 		
-		//Check data events
+		//Check data events 
 		var that = this;
 		var done = false;
 		var datares;
@@ -458,7 +458,7 @@ function JsonStream(){
 			this._totalLen++;
 		}
 
-		console.log('Len:'+this._totalLen+'\t{'+this._numBraces+'}\t['+this._numBrackets+']\t"'+this._openedApix+'"');
+		debuglog('JsonStream Length:'+this._totalLen+'\t{'+this._numBraces+'}\t['+this._numBrackets+']\t"'+this._openedApix+'"');
 	};
 
 	this.isValid = function(){
