@@ -22,6 +22,7 @@ var reflect = require('harmony-reflect');
 var net = require('net');
 var deasync = require('deasync');
 var JSON3 = require("json3");
+var S = require('string');
 
 var debuglog = require('debuglog')('colibrijs');
 
@@ -125,7 +126,8 @@ function ServerLinker(HOST, PORT){
 			this.getSession();
 		
 		//args["sessionId"] = this.sessionId;
-	
+		var jsonStream = new JsonStream();
+
 		//Executing
 		var send = JSON.stringify(args);
 		debuglog('Sending: ' + send);
@@ -134,21 +136,27 @@ function ServerLinker(HOST, PORT){
 		//Controlla evento risponditore 
 		var done = false;
 		var datares;
-		this.client.once('data', function(data) {
+
+		var receiveData = function(data) {
 			debuglog('Receive: ' + data);
-			datares = data;
-			
-			if(isFunction(callback))
-				callback(JSON.parse(datares));
-			
-			done = true;
-		});
-		
+			jsonStream.appendJson(data);
+
+			if(jsonStream.isValid()){ //Json validated
+				if(isFunction(callback)) //If has callback
+					callback(JSON3.parse(jsonStream.json));
+
+				done = true;
+			}
+			else 
+				this.client.once('data', receiveData);
+		}
+
+		this.client.once('data', receiveData);
 		if(callback === undefined)
 			deasync.loopWhile(function(){return !done;});
 		
-		datares = JSON.parse(datares);
-		
+		datares = JSON3.parse(jsonStream.json);
+
 		//Check exceptions
 		if(datares.response == 'exception')
 			throw new Error(datares.message);
@@ -216,10 +224,6 @@ function ServerLinker(HOST, PORT){
 		
 		return undefined;
 	}
-
-	this.recursiveJsonParser = function(json){
-
-	};
 	
 	//In futuro si potrebbe approfondire il passaggio di variabili da js
 	this.parseJObject = function(obj){
@@ -409,6 +413,79 @@ function ObjectWrapper (serverLinker, ref, options) {
 	});
 	
 };
+
+//Copiare da Colibri.NET Server.cs JsonChecker
+function JsonStream(){
+	this.json = "";
+
+	this._numBraces = 0;
+	this._numBrackets = 0;
+	this._openedApix = false;
+	this._afterEscape = false;
+	this._totalLen = 0;
+
+	this.appendJson = function(json){
+		this.json += json;
+
+		console.log('\r\nAppending json len: '+ json.length +' \r\n');
+
+
+		for(var j=0; j<json.length; j++){
+
+			var c = json.charAt(j);
+
+			console.log('c is ' + c);
+			if(c=="'" && !this._afterEscape)
+				this._openedApix = !this._openedApix;
+
+			if(!this._openedApix){
+				var was = true;
+				switch(c){
+					case '{':
+						this._numBraces++;
+						break;
+					case '}':
+						this._numBraces--;
+						break;
+					case '[':
+						this._numBrackets++;
+						break;
+					case ']':
+						this._numBrackets--;
+						break;
+					default:
+						was = false;
+						break;
+				}
+
+				if(was) console.log(c);
+				//if(was) console.log(c + '\t{'+this._numBraces+'}\t['+this._numBreackets+']\t"'+this._openedApix+'"');
+			}
+
+			this._afterEscape = (c == '\\' && this._openedApix && !this._afterEscape);
+			this._totalLen++;
+
+			
+		}
+
+		console.log('Len:'+this._totalLen+'\t{'+this._numBraces+'}\t['+this._numBrackets+']\t"'+this._openedApix+'"');
+
+		//console.log(this); //Studio più approfondito sul cambio di c
+	};
+
+	this.isValid = function(){
+		if(this._totalLen == 0)
+			return false;
+
+		return this._numBraces == 0 && this._numBrackets == 0 && !this._openedApix;
+	};
+
+	this.clear = function(){
+		this.json = "";
+		this._numBraces = this._numBrackets = this._totalLen = 0;
+		this._openedApix = this._afterEscape = false;
+	}
+}
 
 //Wake me up when process ends
 process.once('beforeExit', function() {
