@@ -362,19 +362,30 @@ function ObjectWrapper (serverLinker, ref, options) {
 		get: function (target, name) {	
 			
 			switch(name){
-				case 'cjsGetObjectRef':
-					return ref;
-
 				case 'inspect':
-					var response = serverLinker.objectHandling(ref, {command: 'inspect'});
+					/* 
+						C'è un utilizzo errato del comando inspect, che chiede solo di indicare gli elementi contenuti in un array 
+						https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/for...in
+					*/
+					var response = serverLinker.objectHandling(ref, {command: 'jsonSerialized'});
 					var valof = varBoxToJObject(response);
 					return JSON3.parse(valof);
 
 				case 'valueOf':
 					return function valueOf(){
-						var response = serverLinker.objectHandling(ref, {command: 'inspect'});
+						var response = serverLinker.objectHandling(ref, {command: 'jsonSerialized'});
 						return varBoxToJObject(response);
 					}
+
+				case 'cjsDeepClone':
+					return function(){
+						var response = serverLinker.objectHandling(ref, {command: 'jsonSerialized'});
+						var valof = varBoxToJObject(response);
+						return JSON3.parse(valof);
+					}
+
+				case 'cjsGetObjectRef':
+					return ref;
 			}
 		
 			var response = serverLinker.objectHandling(ref, {command: 'get', property: name});
