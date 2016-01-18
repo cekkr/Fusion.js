@@ -218,7 +218,34 @@ function ServerLinker(HOST, PORT){
 					if(varbox.excode === 'UNDEFINED_MEMBER')
 						return undefined;
 
-					throw new Error(varbox.exception);
+					var error = new Error(varbox.exception);
+
+					if(varbox.exStacks !== undefined){
+						var nex = varbox.exStacks;
+						var sstack = error.stack.split('\n');
+						sstack.splice(1, 0, "   === Colibri.NET Runtime ===");
+
+						for(var ex=0; ex<nex; ex++){
+							var exdescr = JSON3.parse(varbox['exStack_' + ex]);
+
+							var splitrace = exdescr.stacktrace.split('\n');
+							for(var st=0; st<splitrace.length; st++){
+								var str = splitrace[st];
+								var c = 0;
+								for(; c<str.length; c++)
+									if(str[c] != ' ')
+										break;
+
+								sstack.splice(1, 0, '    ' + str.substr(c));
+							}
+
+							//sstack.splice(1, 0, splitrace.join());
+							sstack.splice(1, 0, '   ' + exdescr.message);
+						}
+					}
+
+					error.stack = sstack.join('\n');
+					throw error;
 			}
 		}
 		
