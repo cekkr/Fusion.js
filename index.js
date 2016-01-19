@@ -6,7 +6,7 @@ Copyright (C) 2016 Riccardo Cecchini (https://github.com/cekkr)
 This library is free software; you can redistribute it and/or
 modify it under the terms of the GNU Lesser General Public
 License as published by the Free Software Foundation; either
-version 2.1 of the License, or (at your option) any later version.
+version 3 of the License.
 
 This library is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -214,7 +214,12 @@ function ServerLinker(HOST, PORT){
 					return JSON.parse(varbox.object);		
 				case 'ref':
 					return new ObjectWrapper(this, varbox.object, varbox);
+
 				case 'exception':
+					/*  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!  **
+					**	      EXCEPTION HANDLING        **
+					**  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!  */
+
 					if(varbox.excode === 'UNDEFINED_MEMBER')
 						return undefined;
 
@@ -223,8 +228,21 @@ function ServerLinker(HOST, PORT){
 					if(varbox.exStacks !== undefined){
 						var nex = varbox.exStacks;
 						var sstack = error.stack.split('\n');
-						sstack.splice(1, 0, "   === Colibri.NET Runtime ===");
 
+						//Hide references to colibrijs and harmony-reflect
+						for(var s=0; s<sstack.length; s++){
+							var stack = sstack[s].replace(/\\/g, '/');
+
+							var tohide = 
+								stack.indexOf('node_modules/colibrijs') > -1 ||
+								stack.indexOf('node_modules/harmony-reflect') > -1;
+
+							if(tohide)
+								sstack.splice(s--, 1);
+						}
+
+						//Write CLR stack
+						sstack.splice(1, 0, "   === Colibri.NET Runtime ===");
 						for(var ex=0; ex<nex; ex++){
 							var exdescr = JSON3.parse(varbox['exStack_' + ex]);
 
