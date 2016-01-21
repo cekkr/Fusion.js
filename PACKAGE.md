@@ -24,6 +24,8 @@ npm test
 - [debuglog](https://github.com/sam-github/node-debuglog): backport of util.debuglog from node v0.11
 - [fibers](https://github.com/laverdet/node-fibers): Cooperative multi-tasking for Javascript
 - [harmony-reflect](https://github.com/tvcutsem/harmony-reflect): ES5 shim for ES6 (ECMAScript 6) Reflect and Proxy objects
+- [json3](https://github.com/bestiejs/json3): A modern JSON implementation compatible with nearly all JavaScript platforms.
+- [string](https://github.com/jprichardson/string.js): string contains methods that aren&#39;t included in the vanilla JavaScript string such as escaping html, decoding html entities, stripping tags, etc.
 
 ## Dev Dependencies
 
