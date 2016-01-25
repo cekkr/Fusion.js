@@ -440,12 +440,16 @@ function ObjectWrapper (serverLinker, ref, options) {
 		set: function (target, name, val) {
 			var cmd = {command: 'set', property:name};
 			
-			var objref = -1;
-			if((objref = val.cjsGetObjectRef) === undefined)
-				cmd.val = serverLinker.parseJObject(val);
-			else 
-				cmd.objref = objref;
-			
+			if(val !== undefined){
+				var objref = -1;
+				if((objref = val.cjsGetObjectRef) === undefined)
+					cmd.val = serverLinker.parseJObject(val);
+				else 
+					cmd.objref = objref;
+			}
+			else
+				cmd.val = "null";
+
 			var response = serverLinker.objectHandling(ref, cmd);
 			return varBoxToJObject(response);
 		},
