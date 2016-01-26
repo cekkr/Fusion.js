@@ -6,6 +6,32 @@ var clinker = ColibriJS.Connect();
 var strtest = clinker.get('strtest');
 console.log("strtest = " + strtest);
 
+var stringArray = clinker.get('stringArray');
+console.log(stringArray);
+console.log(stringArray.valueOf());
+console.log(stringArray.toString());
+console.log(typeof(stringArray));
+
+var refStringArray = clinker.get('&stringArray');
+console.log(stringArray);
+console.log(stringArray.valueOf());
+console.log(stringArray.toString());
+console.log(typeof(stringArray));
+
+var passengerStruct = clinker.get('passengerStruct');
+console.log(passengerStruct);
+console.log(passengerStruct.name);
+console.log(passengerStruct.valueOf());
+console.log(passengerStruct.toString());
+console.log(typeof(passengerStruct));
+
+var refPassengerStruct = clinker.get('&passengerStruct');
+console.log(refPassengerStruct);
+console.log(passengerStruct.name);
+console.log(refPassengerStruct.valueOf());
+console.log(refPassengerStruct.toString());
+console.log(typeof(refPassengerStruct));
+console.log("refPassengerStruct.Name = " + passengerStruct.Name);
 
 var test = clinker.get('test');
 

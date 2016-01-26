@@ -99,7 +99,7 @@ function ServerLinker(HOST, PORT){
 		
 		if(connected){
 			this.serverLinker.end();
-			debuglog("I'm going to exit");
+			debuglog("I'm going out");
 			
 			//if(process.env.NODE_DEBUG === "colibrijs")
 			//	process.exit();
@@ -403,9 +403,13 @@ function ObjectWrapper (serverLinker, ref, options) {
 		//console.log("function called!");
 	};
 	
-	return new Proxy(proxyTarget, {
+	//http://soft.vub.ac.be/~tvcutsem/invokedynamic/proxies_tutorial
+	return new Proxy(proxyTarget, { 
 		get: function (target, name) {	
 			
+			if(options.isArray == "1" && name == "toString")
+				name = "valueOf";
+
 			switch(name){
 				case 'inspect':
 					/* 
@@ -420,6 +424,11 @@ function ObjectWrapper (serverLinker, ref, options) {
 					return function valueOf(){
 						var response = serverLinker.objectHandling(ref, {command: 'jsonSerialized'});
 						return varBoxToJObject(response);
+					}
+
+				case 'toString':
+					return function toString(){
+						return "[object Object]";
 					}
 
 				case 'cjsDeepClone':
