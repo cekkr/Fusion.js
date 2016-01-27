@@ -1,6 +1,6 @@
 /*
 
-ColibriJS - Handle .NET objects in JavaScript
+Fusion.js - Handle .NET objects in JavaScript
 Copyright (C) 2016 Riccardo Cecchini (https://github.com/cekkr)
 
 This library is free software; you can redistribute it and/or
@@ -24,12 +24,12 @@ var deasync = require('deasync');
 var JSON3 = require("json3");
 var S = require('string');
 
-var debuglog = require('debuglog')('colibrijs');
+var debuglog = require('debuglog')('fusionjs');
 
-function ColibriJS() {
+function FusionJS() {
 }
 
-ColibriJS.prototype.Connect = function Connect(args) {
+FusionJS.prototype.Connect = function Connect(args) {
 	
 	if(!args)
 		args = {server: '127.0.0.1:3030'};
@@ -101,7 +101,7 @@ function ServerLinker(HOST, PORT){
 			this.serverLinker.end();
 			debuglog("I'm going out");
 			
-			//if(process.env.NODE_DEBUG === "colibrijs")
+			//if(process.env.NODE_DEBUG === "fusionjs")
 			//	process.exit();
 		}
 	});
@@ -229,12 +229,12 @@ function ServerLinker(HOST, PORT){
 						var nex = varbox.exStacks;
 						var sstack = error.stack.split('\n');
 
-						//Hide references to colibrijs and harmony-reflect
+						//Hide references to fusionjs and harmony-reflect
 						for(var s=0; s<sstack.length; s++){
 							var stack = sstack[s].replace(/\\/g, '/');
 
 							var tohide = 
-								stack.indexOf('node_modules/colibrijs') > -1 ||
+								stack.indexOf('node_modules/fusionjs') > -1 ||
 								stack.indexOf('node_modules/harmony-reflect') > -1;
 
 							if(tohide)
@@ -403,7 +403,10 @@ function ObjectWrapper (serverLinker, ref, options) {
 		//console.log("function called!");
 	};
 	
-	//http://soft.vub.ac.be/~tvcutsem/invokedynamic/proxies_tutorial
+	/*
+		https://github.com/tvcutsem/harmony-reflect/blob/master/doc/traps.md
+		http://soft.vub.ac.be/~tvcutsem/invokedynamic/proxies_tutorial
+	*/
 	return new Proxy(proxyTarget, { 
 		get: function (target, name) {	
 			
@@ -549,4 +552,4 @@ process.once('beforeExit', function() {
 	debuglog("Event ends");
 });
 
-module.exports = new ColibriJS();
+module.exports = new FusionJS();

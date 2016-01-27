@@ -1,5 +1,5 @@
 {
-  "name": "colibrijs",
+  "name": "fusionjs",
   "version": "0.0.2",
   "description": "Handle .NET objects in JavaScript",
   "main": "index.js",
