@@ -1,4 +1,4 @@
-# ColibrìJS
+# Fusion.js
 
 Fusion.js is a javascript library based on [harmony-reflect](https://github.com/tvcutsem/harmony-reflect) that allows you to manipulate .NET objects in your JS application or service.
 
