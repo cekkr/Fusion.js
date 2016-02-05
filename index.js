@@ -220,8 +220,8 @@ function ServerLinker(HOST, PORT){
 					**	      EXCEPTION HANDLING        **
 					**  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!  */
 
-					if(varbox.excode === 'UNDEFINED_MEMBER')
-						return undefined;
+					//if(varbox.excode === 'UNDEFINED_MEMBER')
+					//	return undefined;
 
 					var error = new Error(varbox.exception);
 
@@ -242,23 +242,26 @@ function ServerLinker(HOST, PORT){
 						}
 
 						//Write CLR stack
-						sstack.splice(1, 0, "   === Colibri.NET Runtime ===");
-						for(var ex=0; ex<nex; ex++){
-							var exdescr = JSON3.parse(varbox['exStack_' + ex]);
+						if(nex>0)
+						{
+							sstack.splice(1, 0, "   === Colibri.NET Runtime ===");
+							for(var ex=0; ex<nex; ex++){
+								var exdescr = JSON3.parse(varbox['exStack_' + ex]);
 
-							var splitrace = exdescr.stacktrace.split('\n');
-							for(var st=0; st<splitrace.length; st++){
-								var str = splitrace[st];
-								var c = 0;
-								for(; c<str.length; c++)
-									if(str[c] != ' ')
-										break;
+								var splitrace = exdescr.stacktrace.split('\n');
+								for(var st=0; st<splitrace.length; st++){
+									var str = splitrace[st];
+									var c = 0;
+									for(; c<str.length; c++)
+										if(str[c] != ' ')
+											break;
 
-								sstack.splice(1, 0, '    ' + str.substr(c));
+									sstack.splice(1, 0, '    ' + str.substr(c));
+								}
+
+								//sstack.splice(1, 0, splitrace.join());
+								sstack.splice(1, 0, '   ' + exdescr.message);
 							}
-
-							//sstack.splice(1, 0, splitrace.join());
-							sstack.splice(1, 0, '   ' + exdescr.message);
 						}
 					}
 
