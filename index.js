@@ -230,42 +230,50 @@ function ServerLinker(HOST, PORT){
 						var sstack = error.stack.split('\n');
 
 						//Hide references to fusionjs and harmony-reflect
-						for(var s=0; s<sstack.length; s++){
-							var stack = sstack[s].replace(/\\/g, '/');
+						if(process.env.NODE_DEBUG !== "fusionjs"){
+							for(var s=0; s<sstack.length; s++){
+								var stack = sstack[s].replace(/\\/g, '/');
 
-							var tohide = 
-								stack.indexOf('node_modules/fusionjs') > -1 ||
-								stack.indexOf('node_modules/harmony-reflect') > -1;
+								var tohide = 
+									stack.indexOf('node_modules/fusionjs') > -1 ||
+									stack.indexOf('node_modules/harmony-reflect') > -1;
 
-							if(tohide)
-								sstack.splice(s--, 1);
+								if(tohide)
+									sstack.splice(s--, 1);
+							}
 						}
 
 						//Write CLR stack
+						var clrstack = "";
 						if(nex>0)
 						{
-							sstack.splice(1, 0, "   === Colibri.NET Runtime ===");
-							for(var ex=0; ex<nex; ex++){
+							for(var ex=nex-1; ex>=0; ex--){
 								var exdescr = JSON3.parse(varbox['exStack_' + ex]);
 
+								clrstack += ' * ' + exdescr.message.trim() + "\r\n";
+
 								var splitrace = exdescr.stacktrace.split('\n');
-								for(var st=0; st<splitrace.length; st++){
+								for(var st=0; st<splitrace.length-1; st++){
 									var str = splitrace[st];
-									var c = 0;
-									for(; c<str.length; c++)
+
+									for(c = 0; c<str.length; c++)
 										if(str[c] != ' ')
 											break;
 
-									sstack.splice(1, 0, '    ' + str.substr(c));
-								}
-
-								//sstack.splice(1, 0, splitrace.join());
-								sstack.splice(1, 0, '   ' + exdescr.message);
+									var substr = str.substr(c).trim();
+									if(substr)
+										clrstack += '    ' + str.substr(c) + '\r\n';
+								}								
 							}
+
+							clrstack += "   === Colibri.NET Runtime ===";
 						}
 					}
 
-					error.stack = sstack.join('\n');
+					error.stack = sstack[0] + "\r\n" + clrstack + "\r\n";
+					sstack.shift();
+					error.stack += sstack.join('\n');
+
 					throw error;
 			}
 		}
