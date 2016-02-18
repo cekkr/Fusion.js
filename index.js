@@ -270,7 +270,7 @@ function ServerLinker(HOST, PORT){
 						}
 					}
 
-					error.stack = sstack[0] + "\r\n" + clrstack + "\r\n";
+					error.stack = "\r\n" + sstack[0] + "\r\n" + clrstack + "\r\n";
 					sstack.shift();
 					error.stack += sstack.join('\n');
 
