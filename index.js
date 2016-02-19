@@ -27,10 +27,22 @@ var S = require('string');
 var debuglog = require('debuglog')('fusionjs');
 
 function FusionJS() {
+
 }
 
+FusionJS.prototype.settings  = 
+{
+	linker: {
+		gc_ttl: 5
+	}
+}
+
+var linkers = [], garbageCollectorTimer = undefined;
+
 FusionJS.prototype.Connect = function Connect(args) {
-	
+	if(garbageCollectorTimer === undefined)
+		garbageCollectorTimer = setInterval(runGarbageCollector, 5000);
+
 	if(!args)
 		args = {server: '127.0.0.1:3030'};
 	
@@ -55,8 +67,45 @@ FusionJS.prototype.Connect = function Connect(args) {
 	if(args.session)
 		return serverLinker.getSession(args.session);
 	
+	linkers.push(serverLinker);
 	return serverLinker;
 };
+
+///
+/// Garbage Collector 
+///
+function runGarbageCollector(){
+	debuglog("Running garbage collector");
+
+	var nrem = 0, toremove = [];
+
+	var now = getUnixTime();
+	for(var linker of linkers){
+		if(linker.lastRequest > 0 && now - linker.lastRequest > FusionJS.prototype.settings.linker.gc_ttl){
+			debuglog('linker.connected = ' + linker.connected);
+			linker.end();
+			toremove.push(linker);
+			nrem++;
+		}
+	}
+
+	for(var linker of toremove)
+		linkers.splice(linkers.indexOf(linker),1);
+
+	if(nrem > 0)
+		debuglog("Closed " + nrem + " linkers");
+
+	if(linkers.length == 0){
+		clearInterval(garbageCollectorTimer);
+		garbageCollectorTimer = undefined;
+	}
+
+}
+
+function getUnixTime(){
+	return Math.floor(new Date() / 1000);
+}
+
 
 var isFunction = function isFunction(functionToCheck) {
 	var getType = {};
@@ -73,12 +122,11 @@ function ServerLinker(HOST, PORT){
 	this.client.serverLinker = this;
 	this.sessionId = -1;
 	this.connected = false;
-	
+	this.lastRequest = getUnixTime();
+
 	this.client.connect(PORT, HOST, function() {
-		debuglog('CONNECTED TO: ' + HOST + ':' + PORT);
-		this.connected = true;
-		// Write a message to the socket as soon as the client is connected, the server will receive it as message from the client 
-		//this.write('I am Chuck Norris!');
+		debuglog('Connected to Fusion.NET server: ' + HOST + ':' + PORT);
+		this.serverLinker.connected = true;
 	});
 	
 	// Add a 'data' event handler for the client socket
@@ -93,9 +141,11 @@ function ServerLinker(HOST, PORT){
 
 	// Add a 'close' event handler for the client socket
 	this.client.on('close', function() {
+
 		debuglog('Connection closed');
-		
-		var connected = this.serverLinker.connected || this.connected;
+		this.serverLinker.connected = false;
+
+		/*var connected = this.serverLinker.connected || this.connected;
 		
 		if(connected){
 			this.serverLinker.end();
@@ -103,7 +153,7 @@ function ServerLinker(HOST, PORT){
 			
 			//if(process.env.NODE_DEBUG === "fusionjs")
 			//	process.exit();
-		}
+		}*/
 	});
 	
 	this.client.on('end', function () {
@@ -121,7 +171,8 @@ function ServerLinker(HOST, PORT){
 	///	Make requests (synchronous, wait for response if callback is undefined)
 	///
 	this.execRequest = function(args, callback){
-		
+		this.lastRequest = 0;
+
 		if(this.sessionId == -1 && args.request != "getSession")
 			this.getSession();
 		
@@ -161,6 +212,7 @@ function ServerLinker(HOST, PORT){
 		if(datares.response == 'exception')
 			throw new Error(datares.message);
 		
+		this.lastRequest = getUnixTime();
 		return datares;
 	}
 	
