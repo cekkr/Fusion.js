@@ -82,7 +82,6 @@ function runGarbageCollector(){
 	var now = getUnixTime();
 	for(var linker of linkers){
 		if(linker.lastRequest > 0 && now - linker.lastRequest > FusionJS.prototype.settings.linker.gc_ttl){
-			debuglog('linker.connected = ' + linker.connected);
 			linker.end();
 			toremove.push(linker);
 			nrem++;
@@ -555,8 +554,8 @@ function JsonStream(){
 
 	this._numBraces = 0;
 	this._numBrackets = 0;
-	this._openedApix = false;
-	this._afterEscape = false;
+	this._inJsonString = false;
+	this._escapeDepth = 0;
 	this._totalLen = 0;
 
 	this.appendJson = function(json){
@@ -569,10 +568,16 @@ function JsonStream(){
 		for(var j=0; j<json.length; j++){
 			var c = json.charAt(j);
 
-			if(c=="'" && !this._afterEscape)
-				this._openedApix = !this._openedApix;
+			if(c == '\\')
+				this._escapeDepth++;
+			else {
+				if (c == '"' && this._escapeDepth % 2 == 0)
+					this._inJsonString = !this._inJsonString;
 
-			if(!this._openedApix){
+				this._escapeDepth = 0;
+			}
+
+			if(!this._inJsonString){
 				switch(c){
 					case '{':
 						this._numBraces++;
@@ -589,24 +594,23 @@ function JsonStream(){
 				}
 			}
 
-			this._afterEscape = (c == '\\' && this._openedApix && !this._afterEscape);
 			this._totalLen++;
 		}
 
-		debuglog('JsonStream Length:'+this._totalLen+'\t{'+this._numBraces+'}\t['+this._numBrackets+']\t"'+this._openedApix+'"');
+		debuglog('JsonStream Length:'+this._totalLen+'\t{'+this._numBraces+'}\t['+this._numBrackets+']\t"'+this._inJsonString+'"');
 	};
 
 	this.isValid = function(){
 		if(this._totalLen == 0)
 			return false;
 
-		return this._numBraces == 0 && this._numBrackets == 0 && !this._openedApix;
+		return !this._inJsonString && this._numBraces == 0 && this._numBrackets == 0;
 	};
 
 	this.clear = function(){
 		this.json = "";
 		this._numBraces = this._numBrackets = this._totalLen = 0;
-		this._openedApix = this._afterEscape = false;
+		this._inJsonString = this._afterEscape = false;
 	}
 }
 
