@@ -81,7 +81,7 @@ function runGarbageCollector(){
 
 	var now = getUnixTime();
 	for(var linker of linkers){
-		if(linker.destroyed || linker.lastRequest > 0 && now - linker.lastRequest > FusionJS.prototype.settings.linker.gc_ttl){
+		if(linker.destroyed || (!linker.connected && linker.lastRequest==0) || (linker.lastRequest > 0 && now - linker.lastRequest > FusionJS.prototype.settings.linker.gc_ttl)){
 			linker.end();
 			toremove.push(linker);
 			nrem++;
@@ -92,7 +92,7 @@ function runGarbageCollector(){
 		linkers.splice(linkers.indexOf(linker),1);
 
 	if(nrem > 0)
-		debuglog("Closed " + nrem + " linkers");
+		debuglog("Closed " + nrem + " linkers of " + linkers.length);
 
 	if(linkers.length == 0){
 		clearInterval(garbageCollectorTimer);
