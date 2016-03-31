@@ -81,7 +81,7 @@ function runGarbageCollector(){
 
 	var now = getUnixTime();
 	for(var linker of linkers){
-		if(linker.lastRequest > 0 && now - linker.lastRequest > FusionJS.prototype.settings.linker.gc_ttl){
+		if(linker.destroyed || linker.lastRequest > 0 && now - linker.lastRequest > FusionJS.prototype.settings.linker.gc_ttl){
 			linker.end();
 			toremove.push(linker);
 			nrem++;
@@ -163,6 +163,8 @@ function ServerLinker(HOST, PORT){
 	
 	this.client.on('error', function (err) {
 		debuglog('error:', err);
+
+		this.serverLinker.end();
 	});
 	
 	
@@ -377,17 +379,21 @@ function ServerLinker(HOST, PORT){
 	///
 	///	Linker region
 	///
+	this.destroyed = false;
 	this.end = function(){
 		//todo: Controllare che tutte le operazioni siano state terminate 
 		//con deasync.loopWhile(function(){return !done;});
 		
-		if(this.connected){
-			this.endConnection();
+		if(!this.destroyed){
+			if(this.connected){
+				this.endConnection();
+			}
+			
+			this.client.destroy();
+			this.connected = false;
+			this.destroyed = true;
+			debuglog("Client destroyed");
 		}
-		
-		this.client.destroy();
-		this.connected = false;
-		debuglog("Client destroyed");
 	};
 	
 	
