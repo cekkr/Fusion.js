@@ -34,6 +34,9 @@ FusionJS.prototype.settings  =
 {
 	linker: {
 		gc_ttl: 5
+	},
+	defaultArgs:{
+		server: '127.0.0.1:3030'
 	}
 }
 
@@ -44,7 +47,7 @@ FusionJS.prototype.Connect = function Connect(args) {
 		garbageCollectorTimer = setInterval(runGarbageCollector, 5000);
 
 	if(!args)
-		args = {server: '127.0.0.1:3030'};
+		args = {server: FusionJS.prototype.settings.defaultArgs.server};
 	
 	var address = '127.0.0.1';
 	var port = 3030;
@@ -56,7 +59,7 @@ FusionJS.prototype.Connect = function Connect(args) {
 		if(splserver.length>1)
 			port = Number(splserver[1]);
 		else 
-			if(isNan(address)){
+			if(isNumeric(address)){
 				port = address;
 				address = '127.0.0.1';
 			}
@@ -70,6 +73,8 @@ FusionJS.prototype.Connect = function Connect(args) {
 	linkers.push(serverLinker);
 	return serverLinker;
 };
+
+
 
 ///
 /// Garbage Collector 
@@ -109,6 +114,11 @@ function getUnixTime(){
 var isFunction = function isFunction(functionToCheck) {
 	var getType = {};
 	return functionToCheck && getType.toString.call(functionToCheck) === '[object Function]';
+}
+
+var isNumeric = function isNumeric(input)
+{
+    return (input - 0) == input && (''+input).trim().length > 0;
 }
 
 function ServerLinker(HOST, PORT){
