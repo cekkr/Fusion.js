@@ -140,13 +140,13 @@ function ServerLinker(HOST, PORT){
 	
 	// Add a 'data' event handler for the client socket
 	// data is what the server sent to this socket
-	this.client.on('data', function(data) {
+	/*this.client.on('data', function(data) {
 		//debuglog('DATA: ' + data);
 		// Close the client socket completely
 		//debuglog(data);
 		//this.destroy();
 		
-	});
+	});*/
 
 	// Add a 'close' event handler for the client socket
 	this.client.on('close', function() {
@@ -154,27 +154,23 @@ function ServerLinker(HOST, PORT){
 		debuglog('Connection closed');
 		this.serverLinker.connected = false;
 
-		/*var connected = this.serverLinker.connected || this.connected;
-		
-		if(connected){
-			this.serverLinker.end();
-			debuglog("I'm going out");
-			
-			//if(process.env.NODE_DEBUG === "fusionjs")
-			//	process.exit();
-		}*/
 	});
 	
 	this.client.on('end', function () {
         // This may not been called since we are destroying the stream
         // the first time 'data' event is received
         //debuglog('All the data in the file has been read');
+        this.serverLinker.connected = false;
+        this.serverLinker.destroyed = true;
     });
 	
 	this.client.on('error', function (err) {
 		debuglog('error:', err);
 
-		this.serverLinker.end();
+		if(this.connected)
+			this.serverLinker.end();
+		else
+			this.destroyed = true;
 	});
 	
 	
@@ -254,7 +250,11 @@ function ServerLinker(HOST, PORT){
 			return that.varBoxToJObject(response);	
 		}
 	}
-	
+
+	///
+	/// Internal functions
+	///
+
 	this.argumentsToJsonArray = function(myargs){
 		var args = new Array();
 		
@@ -394,11 +394,11 @@ function ServerLinker(HOST, PORT){
 		//todo: Controllare che tutte le operazioni siano state terminate 
 		//con deasync.loopWhile(function(){return !done;});
 		
-		if(!this.destroyed){
+		if(!this.destroyed){	
 			if(this.connected){
 				this.endConnection();
 			}
-			
+
 			this.client.destroy();
 			this.connected = false;
 			this.destroyed = true;
@@ -436,6 +436,16 @@ function ServerLinker(HOST, PORT){
 		this.IsSent = false;
 		this.HasResponse = false;
 	}
+
+	////////
+	///////
+	//////
+	///// After load
+	////
+	///
+	// SET GLOBAL VARIABLES
+	this.$GLOBAL = this.get('$GLOBAL');
+	this.$GLOBAL_POOL = this.get('$GLOBAL_POOL');
 }
 
 
@@ -561,7 +571,6 @@ function ObjectWrapper (serverLinker, ref, options) {
 		}
 
 	});
-	
 };
 
 //Copiare da Colibri.NET Server.cs JsonChecker
