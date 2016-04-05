@@ -261,7 +261,7 @@ function ServerLinker(HOST, PORT){
 		for(a=0; a<myargs.length; a++){
 			var arg = myargs[a];
 			var	oref;
-			if((oref=arg.cjsGetObjectRef) !== undefined)
+			if(arg !== undefined && (oref=arg.cjsGetObjectRef) !== undefined)
 				args.push({cjsObjectRef: oref});
 			else
 				args.push(this.parseJObject(arg));
@@ -477,6 +477,7 @@ function ObjectWrapper (serverLinker, ref, options) {
 		return serverLinker.varBoxToJObject(varbox);
 	}
 	
+	//todo: Attenzione alla "false istanze"
 	var instanceType = function instanceType(args){
 		if(options.isType === "1"){
 			args = serverLinker.argumentsToJsonArray(args);
