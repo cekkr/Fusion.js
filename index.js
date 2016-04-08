@@ -574,7 +574,7 @@ function ObjectWrapper (serverLinker, ref, options) {
 	});
 };
 
-//Copiare da Colibri.NET Server.cs JsonChecker
+//From Fusion.NET with love (Server.cs)
 function JsonStream(){
 	this.json = "";
 
