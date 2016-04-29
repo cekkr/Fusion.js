@@ -523,6 +523,7 @@ function ObjectWrapper (serverLinker, ref, options) {
 						return "[object Object]";
 					}
 
+				case 'refAsValue':
 				case 'cjsDeepClone':
 					return function(){
 						var response = serverLinker.objectHandling(ref, {command: 'jsonSerialized'});
@@ -533,6 +534,8 @@ function ObjectWrapper (serverLinker, ref, options) {
 				case 'cjsGetObjectRef':
 					return ref;
 			}
+
+
 		
 			var response = serverLinker.objectHandling(ref, {command: 'get', property: name});
 			return varBoxToJObject(response);
