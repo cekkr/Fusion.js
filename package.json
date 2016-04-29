@@ -27,7 +27,6 @@
   "dependencies": {
     "deasync": "^0.1.4",
     "debuglog": "^1.0.1",
-    "fibers": "git+https://github.com/laverdet/node-fibers.git",
     "harmony-reflect": "^1.4.2",
     "json3": "^3.3.2",
     "string": "^3.3.1"
