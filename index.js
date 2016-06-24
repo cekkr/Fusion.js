@@ -37,7 +37,8 @@ FusionJS.prototype.settings  =
 	},
 	defaultArgs:{
 		server: '127.0.0.1:3030'
-	}
+	},
+	aliases: {}
 }
 
 var linkers = [], garbageCollectorTimer = undefined;
@@ -65,7 +66,7 @@ FusionJS.prototype.Connect = function Connect(args) {
 			}
 	}
 	
-	var serverLinker = new ServerLinker(address, port);
+	var serverLinker = new ServerLinker(address, port, this.settings);
 	
 	if(args.session)
 		return serverLinker.getSession(args.session);
@@ -121,7 +122,7 @@ var isNumeric = function isNumeric(input)
     return (input - 0) == input && (''+input).trim().length > 0;
 }
 
-function ServerLinker(HOST, PORT){
+function ServerLinker(HOST, PORT, settings){
 	var that = this;
 	
 	///
@@ -239,6 +240,9 @@ function ServerLinker(HOST, PORT){
 	}
 	
 	this.get = function(variable){
+		if(settings.aliases[variable]!==undefined)
+			variable = settings.aliases[variable];
+
 		var response = that.execRequest({ request: 'get', variable: variable});
 		return that.varBoxToJObject(response);
 	}
