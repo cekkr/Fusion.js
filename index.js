@@ -210,7 +210,7 @@ function ServerLinker(HOST, PORT, settings){
 						if(datares.response == 'exception')
 							err = new Error(datares.message);
 
-						setInterval(function() {
+						setTimeout(function() {
 							callback(datares, err);
 						}, 0);
 					}
