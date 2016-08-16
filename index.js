@@ -111,10 +111,9 @@ function getUnixTime(){
 	return Math.floor(new Date() / 1000);
 }
 
-
 var isFunction = function isFunction(functionToCheck) {
 	var getType = {};
-	return functionToCheck && getType.toString.call(functionToCheck) === '[object Function]';
+	return functionToCheck && typeof functionToCheck != "string" && getType.toString.call(functionToCheck) == '[object Function]';
 }
 
 var isNumeric = function isNumeric(input)
@@ -487,7 +486,7 @@ function ObjectWrapper (serverLinker, ref, options) {
 						var args = Array.prototype.slice.call(arguments);
 
 						var userCallback = undefined, callback = undefined;
-						if(isFunction(args[args.length-1])){
+						if(args.length > 0 && args[args.length-1].cjsGetObjectRef === undefined && isFunction(args[args.length-1])){
 							userCallback = args[args.length-1];
 							args.pop();
 
