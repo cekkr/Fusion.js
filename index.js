@@ -30,6 +30,9 @@ function FusionJS() {
 
 }
 
+//Enumerators
+FusionJS.prototype.dontWaitResponse = "X Gon' Give It To Ya";
+
 FusionJS.prototype.settings  =
 {
 	linker: {
@@ -41,14 +44,14 @@ FusionJS.prototype.settings  =
 	aliases: {}
 }
 
-var linkers = [], garbageCollectorTimer = undefined;
+var linkers = [], garbageCollectorTimer = undefined, linkerNumber = 0;
 
 FusionJS.prototype.Connect = function Connect(args) {
 	if(garbageCollectorTimer === undefined)
 		garbageCollectorTimer = setInterval(runGarbageCollector, 5000);
 
-	if(!args)
-		args = {server: FusionJS.prototype.settings.defaultArgs.server};
+	if(!args) args = {};
+	args.server = FusionJS.prototype.settings.defaultArgs.server; //For always replace
 
 	var address = '127.0.0.1';
 	var port = 3030;
@@ -66,10 +69,8 @@ FusionJS.prototype.Connect = function Connect(args) {
 		}
 	}
 
-	var serverLinker = new ServerLinker(address, port, this.settings);
-
-	if(args.session)
-		return serverLinker.getSession(args.session);
+	var serverLinker = new ServerLinker(address, port, mergeData(this.settings, {sessionId: args.sessionId}));
+	serverLinker.linkerNumber = linkerNumber++;
 
 	linkers.push(serverLinker);
 	return serverLinker;
@@ -111,9 +112,16 @@ function getUnixTime(){
 	return Math.floor(new Date() / 1000);
 }
 
+function mergeData(v1, v2){
+	var vr = {};
+	for(var p in v1) vr[p] = v1[p];
+	for(var p in v2) vr[p] = v2[p];
+	return vr;
+}
+
 var isFunction = function isFunction(functionToCheck) {
 	var getType = {};
-	return functionToCheck && typeof functionToCheck != "string" && getType.toString.call(functionToCheck) == '[object Function]';
+	return functionToCheck && ((typeof functionToCheck != "string" && getType.toString.call(functionToCheck) == '[object Function]') || functionToCheck == FusionJS.prototype.dontWaitResponse);
 }
 
 var isNumeric = function isNumeric(input)
@@ -178,7 +186,15 @@ function ServerLinker(HOST, PORT, settings){
 	///
 	///	Make requests (synchronous, wait for response if callback is undefined)
 	///
-	this.execRequest = function(args, callback){
+	this.workingRequest = false;
+	this.execRequest = function(args, callback, options){
+		if(!options) options={};
+
+		if(this.workingRequest){
+			var tempLinker = FusionJS.prototype.Connect({sessionId: this.sessionId});
+			return tempLinker.execRequest(args, callback, {dieAtEnd: true});
+		}
+
 		try{
 			this.lastRequest = 0;
 
@@ -193,39 +209,59 @@ function ServerLinker(HOST, PORT, settings){
 			//Check data events
 			var that = this;
 			var done = false;
-			var datares;
+			that.workingRequest = true;
 
 			var receiveData = function(data) {
-				debuglog('Receive: ' + data);
+				debuglog('['+that.linkerNumber+'] Receive: ' + data);
 				jsonStream.appendJson(data);
 
 				if(jsonStream.isValid()){ //Json validated
-					if(isFunction(callback)){ //If has callback
+
+					if(isFunction(callback)) { //If has callback
 						that.lastRequest = getUnixTime();
-						var datares = JSON3.parse(jsonStream.json);
+						if (callback != FusionJS.prototype.dontWaitResponse) {
+							var err = null, datares = null;
+							try {
+								var datares = JSON3.parse(jsonStream.json);
 
-						//Check exceptions
-						var err = null;
-						if(datares.response == 'exception')
-							err = new Error(datares.message);
+								//Check exceptions
+								var err = null;
+								if (datares.response == 'exception')
+									err = new Error(datares.message);
+							} catch (error) {
+								datares = jsonStream.json;
+								err = error;
+							}
 
-						setTimeout(function() {
-							callback(datares, err);
-						}, 0);
+							setTimeout(function () {
+								callback(datares, err);
+							}, 0);
+
+						}
 					}
+
+					that.workingRequest = false;
 					done = true;
+
+					if(options.dieAtEnd)
+						that.end();
 				}
 				else
 					that.client.once('data', receiveData);
 			}
 
-			debuglog('Sending: ' + send);
+			debuglog('['+that.linkerNumber+'] Sending: ' + send);
 			this.client.write(send);
 			this.client.once('data', receiveData);
-			if(callback === undefined){
+			if(!isFunction(callback) && args.request != 'endConnection'){
 				deasync.loopWhile(function(){return !done;});
 
-				datares = JSON3.parse(jsonStream.json);
+				var datares = null;
+				try {
+					datares = JSON3.parse(jsonStream.json);
+				}catch(err){
+					datares = jsonStream.json;
+				}
 
 				//Check exceptions
 				if(datares.response == 'exception')
@@ -464,6 +500,10 @@ function ServerLinker(HOST, PORT, settings){
 	///// After load
 	////
 	///
+	//Init session (if forced)
+	if(settings.sessionId)
+		this.getSession(settings.sessionId);
+
 	// SET GLOBAL VARIABLES
 	this.$GLOBAL = this.get('$GLOBAL');
 	this.$GLOBAL_POOL = this.get('$GLOBAL_POOL');
@@ -490,12 +530,13 @@ function ObjectWrapper (serverLinker, ref, options) {
 							userCallback = args[args.length-1];
 							args.pop();
 
-							callback = function(response, err){
+
+							callback = userCallback == FusionJS.prototype.dontWaitResponse ? FusionJS.prototype.dontWaitResponse : function(response, err){
 								if(!err)
 									response = varBoxToJObject(response, true)
 
 								userCallback(response, err);
-							}
+							};
 						}
 
 						args = serverLinker.argumentsToJsonArray(args);
@@ -684,6 +725,17 @@ function JsonStream(){
 		this._inJsonString = this._afterEscape = false;
 	}
 }
+
+//Utils
+function cloneFunction(that) {
+	var temp = function temporary() { return that.apply(that, arguments); };
+	for(var key in that) {
+		if (that.hasOwnProperty(key)) {
+			temp[key] = that[key];
+		}
+	}
+	return temp;
+};
 
 //Wake me up when process ends
 process.once('beforeExit', function() {
