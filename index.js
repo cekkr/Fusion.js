@@ -36,7 +36,7 @@ FusionJS.prototype.dontWaitResponse = "X Gon' Give It To Ya";
 FusionJS.prototype.settings  =
 {
 	linker: {
-		gc_ttl: 5
+		gc_ttl: 10
 	},
 	defaultArgs:{
 		server: '127.0.0.1:3030'
@@ -69,8 +69,7 @@ FusionJS.prototype.Connect = function Connect(args) {
 		}
 	}
 
-	var serverLinker = new ServerLinker(address, port, mergeData(this.settings, {sessionId: args.sessionId}));
-	serverLinker.linkerNumber = linkerNumber++;
+	var serverLinker = new ServerLinker(address, port, mergeData(this.settings, {sessionId: args.sessionId, linkerNumber:linkerNumber++}));
 
 	linkers.push(serverLinker);
 	return serverLinker;
@@ -88,7 +87,7 @@ function runGarbageCollector(){
 
 	var now = getUnixTime();
 	for(var linker of linkers){
-		if(linker.destroyed || (!linker.connected && linker.lastRequest==0) || (linker.lastRequest > 0 && now - linker.lastRequest > FusionJS.prototype.settings.linker.gc_ttl)){
+		if(linker.istanced && (linker.destroyed || (!linker.connected && linker.lastRequest==0) || (linker.lastRequest > 0 && now - linker.lastRequest > FusionJS.prototype.settings.linker.gc_ttl))){
 			linker.end();
 			toremove.push(linker);
 			nrem++;
@@ -121,8 +120,12 @@ function mergeData(v1, v2){
 
 var isFunction = function isFunction(functionToCheck) {
 	var getType = {};
-	return functionToCheck && ((typeof functionToCheck != "string" && getType.toString.call(functionToCheck) == '[object Function]') || functionToCheck == FusionJS.prototype.dontWaitResponse);
-}
+	return functionToCheck && ((typeof functionToCheck != "string" && getType.toString.call(functionToCheck) == '[object Function]') /*|| functionToCheck == FusionJS.prototype.dontWaitResponse*/);
+};
+
+var isSpecialArgument = function isSpecialArgument(functionToCheck) {
+	return functionToCheck && functionToCheck == FusionJS.prototype.dontWaitResponse;
+};
 
 var isNumeric = function isNumeric(input)
 {
@@ -130,6 +133,8 @@ var isNumeric = function isNumeric(input)
 }
 
 function ServerLinker(HOST, PORT, settings){
+	this.linkerNumber = settings.linkerNumber;
+	this.istanced = false;
 	var that = this;
 
 	///
@@ -142,6 +147,7 @@ function ServerLinker(HOST, PORT, settings){
 	this.lastRequest = getUnixTime();
 
 	this.client.connect(PORT, HOST, function() {
+		this.serverLinker.istanced = true;
 		debuglog('Connected to Fusion.NET server: ' + HOST + ':' + PORT);
 		this.serverLinker.connected = true;
 	});
@@ -158,22 +164,23 @@ function ServerLinker(HOST, PORT, settings){
 
 	// Add a 'close' event handler for the client socket
 	this.client.on('close', function() {
-
+		this.serverLinker.istanced = true;
 		debuglog('Connection closed');
 		this.serverLinker.connected = false;
 
 	});
 
-	this.client.on('end', function () {
+	this.client.on('end', function (data) {
 		// This may not been called since we are destroying the stream
 		// the first time 'data' event is received
 		// debuglog('All the data in the file has been read');
-		debuglog('End connection');
-		this.serverLinker.connected = false;
-		this.serverLinker.destroyed = true;
+		debuglog('['+that.linkerNumber+' : '+that.sessionId+'] End connection');
+		//this.serverLinker.connected = false;
+		//this.serverLinker.destroyed = true;
 	});
 
 	this.client.on('error', function (err) {
+		this.serverLinker.istanced = true;
 		debuglog('error:', err);
 
 		if(this.connected)
@@ -190,14 +197,16 @@ function ServerLinker(HOST, PORT, settings){
 	this.execRequest = function(args, callback, options){
 		if(!options) options={};
 
+		this.lastRequest = 0;
+
 		if(this.workingRequest){
 			var tempLinker = FusionJS.prototype.Connect({sessionId: this.sessionId});
-			return tempLinker.execRequest(args, callback, {dieAtEnd: true});
+			var res = tempLinker.execRequest(args, callback, {dieAtEnd: true});
+			this.lastRequest = getUnixTime();
+			if(res) return res;
 		}
 
 		try{
-			this.lastRequest = 0;
-
 			if(this.sessionId == -1 && args.request != "getSession")
 				this.getSession();
 
@@ -208,17 +217,18 @@ function ServerLinker(HOST, PORT, settings){
 
 			//Check data events
 			var that = this;
-			var done = false;
+			jsonStream.done = false;
 			that.workingRequest = true;
 
 			var receiveData = function(data) {
-				debuglog('['+that.linkerNumber+'] Receive: ' + data);
+				debuglog('['+that.linkerNumber+' : '+that.sessionId+'] Receive: ' + data);
 				jsonStream.appendJson(data);
 
 				if(jsonStream.isValid()){ //Json validated
 
 					if(isFunction(callback)) { //If has callback
 						that.lastRequest = getUnixTime();
+
 						if (callback != FusionJS.prototype.dontWaitResponse) {
 							var err = null, datares = null;
 							try {
@@ -241,20 +251,20 @@ function ServerLinker(HOST, PORT, settings){
 					}
 
 					that.workingRequest = false;
-					done = true;
+					jsonStream.done = true;
 
-					if(options.dieAtEnd)
-						that.end();
+					/*if(options.dieAtEnd)
+						that.end();*/
 				}
 				else
 					that.client.once('data', receiveData);
 			}
 
-			debuglog('['+that.linkerNumber+'] Sending: ' + send);
+			debuglog('['+that.linkerNumber+' : '+that.sessionId+'] Sending: ' + send);
 			this.client.write(send);
 			this.client.once('data', receiveData);
 			if(!isFunction(callback) && args.request != 'endConnection'){
-				deasync.loopWhile(function(){return !done;});
+				deasync.loopWhile(function(){return !jsonStream.done;});
 
 				var datares = null;
 				try {
@@ -459,33 +469,9 @@ function ServerLinker(HOST, PORT, settings){
 			this.client.destroy();
 			this.connected = false;
 			this.destroyed = true;
-			debuglog("Client destroyed");
+			debuglog('['+that.linkerNumber+' : '+that.sessionId+'] Client destroyed');
 		}
 	};
-
-
-	/// Exit events
-	function exitHandler(options, err) {
-
-		if (options.cleanup){
-			options.serverLinker.client.destroy();
-			debuglog('ServerLinker cleaned.');
-			process.exit();
-		}
-
-		if (err) debuglog(err.stack);
-		if (options.exit) process.exit();
-	}
-
-	//do something when app is closing
-	process.on('exit', exitHandler.bind(null,{serverLinker: this, cleanup:true}));
-
-	//catches ctrl+c event
-	process.on('SIGINT', exitHandler.bind(null, {serverLinker: this, exit:true}));
-
-	//catches uncaught exceptions
-	process.on('uncaughtException', exitHandler.bind(null, {serverLinker: this, exit:true}));
-
 
 	//Related classes
 	function Request() {
@@ -507,6 +493,7 @@ function ServerLinker(HOST, PORT, settings){
 	// SET GLOBAL VARIABLES
 	this.$GLOBAL = this.get('$GLOBAL');
 	this.$GLOBAL_POOL = this.get('$GLOBAL_POOL');
+
 }
 
 
@@ -526,7 +513,7 @@ function ObjectWrapper (serverLinker, ref, options) {
 						var args = Array.prototype.slice.call(arguments);
 
 						var userCallback = undefined, callback = undefined;
-						if(args.length > 0 && args[args.length-1].cjsGetObjectRef === undefined && isFunction(args[args.length-1])){
+						if(args.length > 0 && args[args.length-1].cjsGetObjectRef === undefined && (isFunction(args[args.length-1])||isSpecialArgument(args[args.length-1]))){
 							userCallback = args[args.length-1];
 							args.pop();
 
@@ -740,6 +727,33 @@ function cloneFunction(that) {
 //Wake me up when process ends
 process.once('beforeExit', function() {
 	debuglog("Event ends");
+});
+
+/// Exit events
+function exitHandler(options, err) {
+
+	if (options.cleanup){
+		for(var linker of linkers){
+			linker.client.destroy();
+		}
+
+		debuglog('ServerLinker cleaned.');
+		process.exit();
+	}
+
+	if (err) debuglog(err.stack);
+	if (options.exit) process.exit();
+}
+
+//do something when app is closing
+process.on('exit', exitHandler.bind(null,{cleanup:true}));
+
+//catches ctrl+c event
+process.on('SIGINT', exitHandler.bind(null, {exit:true}));
+
+//catches uncaught exceptions
+process.on('uncaughtException', function(err){
+	console.log('Uncaught exception: ', err);
 });
 
 module.exports = new FusionJS();
