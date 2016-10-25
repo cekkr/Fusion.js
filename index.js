@@ -752,8 +752,8 @@ process.on('exit', exitHandler.bind(null,{cleanup:true}));
 process.on('SIGINT', exitHandler.bind(null, {exit:true}));
 
 //catches uncaught exceptions
-process.on('uncaughtException', function(err){
+/*process.on('uncaughtException', function(err){
 	console.log('Uncaught exception: ', err);
-});
+});*/
 
 module.exports = new FusionJS();
