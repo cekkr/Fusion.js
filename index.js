@@ -18,7 +18,7 @@
 
  */
 
-var reflect = require('harmony-reflect');
+var reflect = require('harmony-reflect'); //C'è, ma non serve
 var net = require('net');
 var deasync = require('deasync');
 var JSON3 = require("json3");
@@ -51,7 +51,7 @@ FusionJS.prototype.Connect = function Connect(args) {
 		garbageCollectorTimer = setInterval(runGarbageCollector, 5000);
 
 	if(!args) args = {};
-	args.server = FusionJS.prototype.settings.defaultArgs.server; //For always replace
+	args.server = args.server || FusionJS.prototype.settings.defaultArgs.server; 
 
 	var address = '127.0.0.1';
 	var port = 3030;
