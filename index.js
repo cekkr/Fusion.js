@@ -51,7 +51,7 @@ FusionJS.prototype.Connect = function Connect(args) {
 		garbageCollectorTimer = setInterval(runGarbageCollector, 5000);
 
 	if(!args) args = {};
-	args.server = args.server || FusionJS.prototype.settings.defaultArgs.server; 
+	args.server = args.server || FusionJS.prototype.settings.defaultArgs.server;
 
 	var address = '127.0.0.1';
 	var port = 3030;
@@ -646,6 +646,8 @@ function ObjectWrapper (serverLinker, ref, options) {
 
 	});
 };
+
+
 
 //From Fusion.NET with love (Server.cs)
 function JsonStream(){
