@@ -254,7 +254,7 @@ function ServerLinker(HOST, PORT, settings){
 					jsonStream.done = true;
 
 					/*if(options.dieAtEnd)
-						that.end();*/
+					 that.end();*/
 				}
 				else
 					that.client.once('data', receiveData);
@@ -562,6 +562,127 @@ function ObjectWrapper (serverLinker, ref, options) {
 		//console.log("function called!");
 	};
 
+	function createFunctionForProperty(ref, name){
+		return function() {
+			var args = Array.prototype.slice.call(arguments);
+
+			var userCallback = undefined, callback = undefined;
+			if (args.length > 0 && args[args.length - 1].cjsGetObjectRef === undefined && (isFunction(args[args.length - 1]) || isSpecialArgument(args[args.length - 1]))) {
+				userCallback = args[args.length - 1];
+				args.pop();
+
+
+				callback = userCallback == FusionJS.prototype.dontWaitResponse ? FusionJS.prototype.dontWaitResponse : function (response, err) {
+					if (!err)
+						response = varBoxToJObject(response, true)
+
+					userCallback(response, err);
+				};
+			}
+
+			args = serverLinker.argumentsToJsonArray(args);
+			var response = serverLinker.objectHandling(ref, {
+				command: 'methodExec',
+				property: name,
+				arguments: args
+			}, callback);
+
+			if (callback === undefined) {
+				return varBoxToJObject(response);
+			}
+
+		};
+	}
+
+	function createGetFunctionForProperty(ref, property){
+		return function() {
+			if(options.isArray == "1" && name == "toString")
+				name = "valueOf";
+
+			switch(name){
+				case 'inspect':
+					/*
+					 C'è un utilizzo errato del comando inspect, che chiede solo di indicare gli elementi contenuti in un array
+					 https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/for...in
+					 */
+					var response = serverLinker.objectHandling(ref, {command: 'jsonSerialized'});
+					var valof = varBoxToJObject(response);
+					return JSON3.parse(valof);
+
+				case 'valueOf':
+					return function valueOf(){
+						var response = serverLinker.objectHandling(ref, {command: 'jsonSerialized'});
+						return varBoxToJObject(response);
+					}
+
+				case 'toString':
+					return function toString(){
+						return "[object Object]";
+					}
+
+				case 'refAsValue':
+				case 'cjsDeepClone':
+					return function(){
+						var response = serverLinker.objectHandling(ref, {command: 'jsonSerialized'});
+						var valof = varBoxToJObject(response);
+						return JSON3.parse(valof);
+					}
+
+				case 'cjsGetObjectRef':
+					return ref;
+			}
+
+			var response = serverLinker.objectHandling(ref, {command: 'get', property: name});
+			return varBoxToJObject(response);
+		};
+	}
+
+	function createSetFunctionForProperty(ref, name){
+		return function(val) {
+			var cmd = {command: 'set', property:name};
+
+			if(val !== undefined){
+				var objref = -1;
+				if((objref = val.cjsGetObjectRef) === undefined)
+					cmd.val = serverLinker.parseJObject(val);
+				else
+					cmd.objref = objref;
+			}
+			else
+				cmd.val = "null";
+
+			var response = serverLinker.objectHandling(ref, cmd);
+			return varBoxToJObject(response);
+		};
+	}
+
+	var properties = varBoxToJObject(serverLinker.objectHandling(ref, {command: 'inspect'}));
+
+	var proxy = {};
+	for(var property of properties){
+		var isMethod = false;
+
+		if(property.endsWith("()")){
+			isMethod = true;
+			property = property.substr(0, property.length-2);
+		}
+
+		var name = property;
+		if(isMethod){
+			proxy[property] = createFunctionForProperty(ref, property);
+		}
+		else {
+			Object.defineProperty(proxy, property, {
+				get: createGetFunctionForProperty(ref, property),
+				set: createSetFunctionForProperty(ref, property),
+				enumerable: true,
+				configurable: true
+			});
+		}
+	}
+
+	return proxy;
+
 	/*
 	 https://github.com/tvcutsem/harmony-reflect/blob/master/doc/traps.md
 	 http://soft.vub.ac.be/~tvcutsem/invokedynamic/proxies_tutorial
@@ -646,8 +767,6 @@ function ObjectWrapper (serverLinker, ref, options) {
 
 	});
 };
-
-
 
 //From Fusion.NET with love (Server.cs)
 function JsonStream(){
@@ -755,7 +874,7 @@ process.on('SIGINT', exitHandler.bind(null, {exit:true}));
 
 //catches uncaught exceptions
 /*process.on('uncaughtException', function(err){
-	console.log('Uncaught exception: ', err);
-});*/
+ console.log('Uncaught exception: ', err);
+ });*/
 
 module.exports = new FusionJS();
