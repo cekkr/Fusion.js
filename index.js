@@ -564,99 +564,113 @@ function ObjectWrapper (serverLinker, ref, options) {
 
 	function createFunctionForProperty(ref, name){
 		return function() {
-			var args = Array.prototype.slice.call(arguments);
+			try {
+				var args = Array.prototype.slice.call(arguments);
 
-			var userCallback = undefined, callback = undefined;
-			if (args.length > 0 && args[args.length - 1].cjsGetObjectRef === undefined && (isFunction(args[args.length - 1]) || isSpecialArgument(args[args.length - 1]))) {
-				userCallback = args[args.length - 1];
-				args.pop();
+				var userCallback = undefined, callback = undefined;
+				if (args.length > 0 && args[args.length - 1].cjsGetObjectRef === undefined && (isFunction(args[args.length - 1]) || isSpecialArgument(args[args.length - 1]))) {
+					userCallback = args[args.length - 1];
+					args.pop();
 
 
-				callback = userCallback == FusionJS.prototype.dontWaitResponse ? FusionJS.prototype.dontWaitResponse : function (response, err) {
-					if (!err)
-						response = varBoxToJObject(response, true)
+					callback = userCallback == FusionJS.prototype.dontWaitResponse ? FusionJS.prototype.dontWaitResponse : function (response, err) {
+						if (!err)
+							response = varBoxToJObject(response, true)
 
-					userCallback(response, err);
-				};
+						userCallback(response, err);
+					};
+				}
+
+				args = serverLinker.argumentsToJsonArray(args);
+				var response = serverLinker.objectHandling(ref, {
+					command: 'methodExec',
+					property: name,
+					arguments: args
+				}, callback);
+
+				if (callback === undefined) {
+					return varBoxToJObject(response);
+				}
 			}
-
-			args = serverLinker.argumentsToJsonArray(args);
-			var response = serverLinker.objectHandling(ref, {
-				command: 'methodExec',
-				property: name,
-				arguments: args
-			}, callback);
-
-			if (callback === undefined) {
-				return varBoxToJObject(response);
+			catch(err){
+				console.log(err);
 			}
-
 		};
 	}
 
-	function createGetFunctionForProperty(ref, property){
+	function createGetFunctionForProperty(ref, name){
 		return function() {
-			if(options.isArray == "1" && name == "toString")
-				name = "valueOf";
+			try {
+				if (options.isArray == "1" && name == "toString")
+					name = "valueOf";
 
-			switch(name){
-				case 'inspect':
-					/*
-					 C'è un utilizzo errato del comando inspect, che chiede solo di indicare gli elementi contenuti in un array
-					 https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/for...in
-					 */
-					var response = serverLinker.objectHandling(ref, {command: 'jsonSerialized'});
-					var valof = varBoxToJObject(response);
-					return JSON3.parse(valof);
-
-				case 'valueOf':
-					return function valueOf(){
-						var response = serverLinker.objectHandling(ref, {command: 'jsonSerialized'});
-						return varBoxToJObject(response);
-					}
-
-				case 'toString':
-					return function toString(){
-						return "[object Object]";
-					}
-
-				case 'refAsValue':
-				case 'cjsDeepClone':
-					return function(){
+				switch (name) {
+					case 'inspect':
+						/*
+						 C'è un utilizzo errato del comando inspect, che chiede solo di indicare gli elementi contenuti in un array
+						 https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/for...in
+						 */
 						var response = serverLinker.objectHandling(ref, {command: 'jsonSerialized'});
 						var valof = varBoxToJObject(response);
 						return JSON3.parse(valof);
-					}
 
-				case 'cjsGetObjectRef':
-					return ref;
+					case 'valueOf':
+						return function valueOf() {
+							var response = serverLinker.objectHandling(ref, {command: 'jsonSerialized'});
+							return varBoxToJObject(response);
+						}
+
+					case 'toString':
+						return function toString() {
+							return "[object Object]";
+						}
+
+					case 'refAsValue':
+					case 'cjsDeepClone':
+						return function () {
+							var response = serverLinker.objectHandling(ref, {command: 'jsonSerialized'});
+							var valof = varBoxToJObject(response);
+							return JSON3.parse(valof);
+						}
+
+					case 'cjsGetObjectRef':
+						return ref;
+				}
+
+				var response = serverLinker.objectHandling(ref, {command: 'get', property: name});
+				return varBoxToJObject(response);
+			}catch(err){
+				console.log(err);
 			}
-
-			var response = serverLinker.objectHandling(ref, {command: 'get', property: name});
-			return varBoxToJObject(response);
 		};
 	}
 
 	function createSetFunctionForProperty(ref, name){
 		return function(val) {
-			var cmd = {command: 'set', property:name};
+			try {
+				var cmd = {command: 'set', property: name};
 
-			if(val !== undefined){
-				var objref = -1;
-				if((objref = val.cjsGetObjectRef) === undefined)
-					cmd.val = serverLinker.parseJObject(val);
+				if (val !== undefined) {
+					var objref = -1;
+					if ((objref = val.cjsGetObjectRef) === undefined)
+						cmd.val = serverLinker.parseJObject(val);
+					else
+						cmd.objref = objref;
+				}
 				else
-					cmd.objref = objref;
-			}
-			else
-				cmd.val = "null";
+					cmd.val = "null";
 
-			var response = serverLinker.objectHandling(ref, cmd);
-			return varBoxToJObject(response);
+				var response = serverLinker.objectHandling(ref, cmd);
+				return varBoxToJObject(response);
+			}
+			catch(err){
+				console.log(err);
+			}
 		};
 	}
 
 	var properties = varBoxToJObject(serverLinker.objectHandling(ref, {command: 'inspect'}));
+	properties.push("inspect", "valueOf", "toString", "refAsValue", "cjsDeepClone", "cjsGetObjectRef");
 
 	var proxy = {};
 	for(var property of properties){
@@ -667,7 +681,6 @@ function ObjectWrapper (serverLinker, ref, options) {
 			property = property.substr(0, property.length-2);
 		}
 
-		var name = property;
 		if(isMethod){
 			proxy[property] = createFunctionForProperty(ref, property);
 		}
