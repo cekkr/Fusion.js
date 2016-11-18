@@ -670,7 +670,7 @@ function ObjectWrapper (serverLinker, ref, options) {
 	}
 
 	var properties = varBoxToJObject(serverLinker.objectHandling(ref, {command: 'inspect'}));
-	properties.push("inspect", "valueOf", "toString", "refAsValue", "cjsDeepClone", "cjsGetObjectRef", "cjsMotherfuckers");
+	properties.push("inspect", "valueOf", "toString", "refAsValue", "cjsDeepClone", "cjsGetObjectRef", "cjsBadMotherfuckers");
 
 	var proxy = {};
 	for(var property of properties){
@@ -738,7 +738,7 @@ function ObjectWrapper (serverLinker, ref, options) {
 				case 'cjsGetObjectRef':
 					return ref;
 
-				case 'cjsMotherfuckers':
+				case 'cjsBadMotherfuckers':
 					return true;
 			}
 
