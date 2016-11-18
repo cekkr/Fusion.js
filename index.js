@@ -264,7 +264,11 @@ function ServerLinker(HOST, PORT, settings){
 			this.client.write(send);
 			this.client.once('data', receiveData);
 			if(!isFunction(callback) && args.request != 'endConnection'){
-				deasync.loopWhile(function(){return !jsonStream.done;});
+				var waitTick = 0;
+				deasync.loopWhile(function(){
+					return !jsonStream.done && waitTick++ < 100;
+				});
+				while(!jsonStream.done) require('deasync').sleep(20);
 
 				var datares = null;
 				try {
@@ -635,6 +639,9 @@ function ObjectWrapper (serverLinker, ref, options) {
 
 					case 'cjsGetObjectRef':
 						return ref;
+
+					case 'cjsBadMotherfuckers':
+						return true;
 				}
 
 				var response = serverLinker.objectHandling(ref, {command: 'get', property: name});
@@ -695,93 +702,6 @@ function ObjectWrapper (serverLinker, ref, options) {
 	}
 
 	return proxy;
-
-	/*
-	 https://github.com/tvcutsem/harmony-reflect/blob/master/doc/traps.md
-	 http://soft.vub.ac.be/~tvcutsem/invokedynamic/proxies_tutorial
-	 */
-	return new Proxy(proxyTarget, {
-		get: function (target, name) {
-
-			if(options.isArray == "1" && name == "toString")
-				name = "valueOf";
-
-			switch(name){
-				case 'inspect':
-					/*
-					 C'è un utilizzo errato del comando inspect, che chiede solo di indicare gli elementi contenuti in un array
-					 https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/for...in
-					 */
-					var response = serverLinker.objectHandling(ref, {command: 'jsonSerialized'});
-					var valof = varBoxToJObject(response);
-					return JSON3.parse(valof);
-
-				case 'valueOf':
-					return function valueOf(){
-						var response = serverLinker.objectHandling(ref, {command: 'jsonSerialized'});
-						return varBoxToJObject(response);
-					}
-
-				case 'toString':
-					return function toString(){
-						return "[object Object]";
-					}
-
-				case 'refAsValue':
-				case 'cjsDeepClone':
-					return function(){
-						var response = serverLinker.objectHandling(ref, {command: 'jsonSerialized'});
-						var valof = varBoxToJObject(response);
-						return JSON3.parse(valof);
-					}
-
-				case 'cjsGetObjectRef':
-					return ref;
-
-				case 'cjsBadMotherfuckers':
-					return true;
-			}
-
-
-
-			var response = serverLinker.objectHandling(ref, {command: 'get', property: name});
-			return varBoxToJObject(response);
-		},
-
-		set: function (target, name, val) {
-			var cmd = {command: 'set', property:name};
-
-			if(val !== undefined){
-				var objref = -1;
-				if((objref = val.cjsGetObjectRef) === undefined)
-					cmd.val = serverLinker.parseJObject(val);
-				else
-					cmd.objref = objref;
-			}
-			else
-				cmd.val = "null";
-
-			var response = serverLinker.objectHandling(ref, cmd);
-			return varBoxToJObject(response);
-		},
-
-		apply: function(target, wetThisArg, args) {
-			if(options.isType === "1")
-				return instanceType(args);
-			else{
-				debuglog(target + " ha provato ad eseguire ");
-				debuglog(wetThisArg);
-				debuglog(wetArgs);
-
-				return 2;
-			}
-		},
-
-		construct: function(target, args) {
-			return instanceType(args);
-		}
-
-	});
 };
 
 //From Fusion.NET with love (Server.cs)
